@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Outils IA — présents en local, jamais versionnés.
+# AGENTS.md est réécrit automatiquement par `next dev` à chaque lancement :
+# sans cette ligne, il réapparaît indéfiniment dans `git status`.
+/CLAUDE.md
+/AGENTS.md
+/.claude/
+/.cursor/

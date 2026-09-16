@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <!--
+    Favicon du site : le monogramme du musée.
+
+    Fichier nommé `icon.svg` et placé à la racine de `app/` : c'est une
+    convention de Next, qui génère tout seul la balise <link rel="icon"> avec
+    une empreinte de cache. Rien à déclarer dans le layout.
+
+    POURQUOI CE N'EST PAS LE MÊME DESSIN QUE `components/layout/Logo.tsx`,
+    alors que c'est le même logo. Un favicon n'est pas un logo en petit, et les
+    trois écarts sont volontaires :
+
+    1. LES TRAITS SONT PLUS ÉPAIS (3 unités au lieu de 2) et les équerres plus
+       longues. Affiché à 16px, un trait de 2/40 mesure 0,8px : il tombe entre
+       deux pixels et se rend en gris baveux. Épaissi, le cadre reste lisible.
+    2. LE FOND EST NOIR, pas transparent. Le logo du site est en `currentColor`
+       et s'adapte au bloc qui l'entoure ; un favicon, lui, n'a aucun contexte —
+       il doit tenir sur une barre d'onglets claire comme sombre. Le carré noir
+       à marques blanches est justement le dessin qui fonctionne sur les deux.
+    3. LE « m » EST EN POLICE SYSTÈME. Un favicon est rendu dans un contexte
+       restreint : ni police web, ni script. Instrument Serif n'y serait pas
+       chargée, d'où la pile de serifs système — à la taille d'un onglet, la
+       différence est invisible.
+  -->
+  <rect width="40" height="40" fill="#000000" />
+
+  <g fill="#ffffff">
+    <!-- Équerre haut-gauche -->
+    <rect x="5" y="5" width="6" height="3" />
+    <rect x="5" y="5" width="3" height="6" />
+    <!-- Équerre haut-droite -->
+    <rect x="29" y="5" width="6" height="3" />
+    <rect x="32" y="5" width="3" height="6" />
+    <!-- Équerre bas-gauche -->
+    <rect x="5" y="32" width="6" height="3" />
+    <rect x="5" y="29" width="3" height="6" />
+    <!-- Équerre bas-droite -->
+    <rect x="29" y="32" width="6" height="3" />
+    <rect x="32" y="29" width="3" height="6" />
+    <!-- Traits médians haut et bas -->
+    <rect x="15.5" y="5" width="9" height="3" />
+    <rect x="15.5" y="32" width="9" height="3" />
+    <!-- Points médians gauche et droite -->
+    <rect x="5" y="18.5" width="3" height="3" />
+    <rect x="32" y="18.5" width="3" height="3" />
+  </g>
+
+  <!--
+    `y` n'est pas le centre du carré : une minuscule se centre sur sa hauteur
+    d'x, pas sur sa ligne de base. 25 place le « m » optiquement au milieu.
+  -->
+  <text
+    x="20"
+    y="25"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', Times, serif"
+    font-size="21"
+    fill="#ffffff"
+  >m</text>
+</svg>

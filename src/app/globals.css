@@ -1,26 +1,305 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---------------------------------------------------------------------------
+   Design tokens
+   ---------------------------------------------------------------------------
+   Seule source de vérité des couleurs, typos et rythmes du site.
+   Un composant n'écrit JAMAIS une valeur en dur (pas de text-[#666]) :
+   il utilise un token défini ici. Changer l'identité du site = changer ce bloc.
+
+   IMPORTANT : toutes les tailles sont en rem, jamais en px. Le rem est rendu
+   fluide plus bas (voir @layer base), donc tout le site se met à l'échelle
+   proportionnellement. Une valeur en px casserait ce mécanisme.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* Couleurs — palette volontairement minimale : l'œuvre reproduite porte le design.
+     `ink` = texte et aplats sombres, `paper` = fond du site, `line` = filets et bordures. */
+  --color-ink: #141210;
+  --color-ink-soft: #56514c;
+  --color-ink-mute: #8a847d;
+  /* Noir franc des surfaces inversées : header, footer, sections `tone="ink"`.
+     Distinct d'`ink`, qui est un noir chaud pensé pour du TEXTE sur fond clair —
+     en aplat plein écran il se lit comme un gris-brun, pas comme du noir. */
+  --color-ink-deep: #000000;
+  --color-paper: #faf9f7;
+  --color-surface: #ffffff;
+  --color-line: #e4e1dc;
+  --color-accent: #8a6f4e;
+
+  /* Pastilles du filtre « teinte dominante » de la collection.
+     Ce ne sont PAS des couleurs d'interface : elles ne servent qu'à représenter
+     une famille chromatique dans les filtres. Elles vivent quand même ici, parce
+     que la règle du projet est qu'aucune couleur ne s'écrit en dur dans un
+     composant — `lib/facets.ts` les référence en `var(--color-hue-…)`.
+     Valeurs choisies comme des pigments, pas comme des couleurs d'écran :
+     rabattues et légèrement grisées, pour ne pas hurler à côté des œuvres. */
+  --color-hue-bleu: #2f4f9b;
+  --color-hue-vert: #47734f;
+  --color-hue-jaune: #c2a12f;
+  --color-hue-rouge: #a3322c;
+  --color-hue-rose: #d3a19d;
+  --color-hue-brun: #7a5230;
+  --color-hue-gris: #6f6b66;
+
+  /* Typographie. Les valeurs correspondent à la maquette de référence 1440px :
+     5rem = 80px à 1440. Pas de clamp() — le rem fluide fait déjà le travail. */
+  --text-display: 5rem;
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.03em;
+
+  --text-title: 2.75rem;
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.02em;
+
+  --text-lead: 1.25rem;
+  --text-lead--line-height: 1.55;
+
+  /* Hauteur du header collant. Référencée par le header LUI-MÊME et par tout
+     élément `sticky` qui doit se caler dessous plutôt que passer dessous —
+     sans ce token partagé, les deux valeurs divergent à la première retouche. */
+  --spacing-header: 4rem;
+
+  /* Hauteur utile d'un bloc « plein écran » : l'écran MOINS le header collant.
+     Sans la soustraction, un bloc en 100svh finirait toujours 4rem trop bas —
+     le header recouvre en permanence le haut de la zone visible. Posé comme
+     token plutôt qu'écrit dans chaque section : le jour où le header change de
+     hauteur, `--spacing-header` suffit à tout réaligner.
+
+     `svh` et non `vh` : sur un navigateur qui rétracte sa barre d'outils, `vh`
+     mesure la fenêtre la plus GRANDE et le bloc dépasserait au chargement. */
+  --spacing-viewport: calc(100svh - var(--spacing-header));
+
+  /* Rythme vertical des sections */
+  --spacing-section: 7.5rem;
+  --spacing-section-lg: 10rem;
+  /* Respiration réduite, réservée aux blocs plein écran dont le contenu EST le
+     sujet — le bandeau d'œuvres. Le rythme normal y prendrait près de la moitié
+     de la hauteur disponible et réduirait les œuvres à une frise. */
+  --spacing-section-sm: 4.5rem;
+  /* Marge latérale du site */
+  --spacing-gutter: 5rem;
+
+  /* Largeurs de contenu. 90rem = 1440px à la base : le contenu occupe donc tout
+     l'écran jusqu'à 1920px, puis se centre au-delà. */
+  --container-site: 90rem;
+  --container-reading: 44rem;
 }
 
+/* Les polices sont chargées par next/font dans le root layout, qui expose
+   des variables CSS. `inline` est nécessaire ici car on référence ces variables. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-instrument-serif);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* --------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    /* TYPOGRAPHIE FLUIDE
+       1rem vaut exactement 16px sur un écran de 1440px — la largeur de la maquette.
+       En dessous le site rétrécit, au-dessus il grandit, toujours dans les mêmes
+       proportions. C'est ce qui permet de n'écrire aucune media query de taille.
+
+       Contrepartie assumée : le zoom et la taille de police par défaut du
+       navigateur n'ont plus d'effet, puisque tout dépend de 100vw. */
+    font-size: calc(100vw / 1440 * 16);
+
+    /* Au-delà de 1920px on fige, sinon le site continuerait de grossir
+       indéfiniment sur un écran 4K.
+       21.333px = 1920 / 1440 * 16, c'est-à-dire exactement la valeur atteinte
+       à 1920px : le passage du palier est invisible, sans saut de taille. */
+    @media (min-width: 1920px) {
+      font-size: 21.333px;
+    }
+
+    /* Supprime l'effet de rebond en fin de scroll. */
+    overscroll-behavior: none;
+    scroll-behavior: smooth;
+
+    /* HAUTEUR RÉSERVÉE AU HEADER COLLANT EN HAUT DE TOUT DÉFILEMENT.
+       ----------------------------------------------------------------
+       Une seule déclaration, mais elle règle trois choses à la fois. Ne pas la
+       retirer sans avoir relu les trois.
+
+       1. L'ARRIVÉE SUR UNE PAGE, et c'était un vrai bug. Le routeur de Next
+          décide s'il doit remonter en haut avec ce test
+          (`node_modules/next/dist/client/components/layout-router.js`) :
+
+            elementTop >= scrollPaddingTop && elementTop <= viewportHeight
+
+          — si le haut de la nouvelle page est « déjà dans le viewport », il ne
+          scrolle PAS. Sans `scroll-padding-top`, le seuil vaut 0 : en quittant
+          une page avec un scroll de 1 à 64px, le haut de la page suivante se
+          retrouve entre 0 et 64px, Next conclut « c'est visible » et laisse le
+          visiteur décalé d'une hauteur de header. Avec le seuil à 4rem, ce cas
+          est reconnu comme « pas en haut » et la remontée se fait.
+       2. LES ANCRES (#id) et tout `scrollIntoView` : la cible se cale sous le
+          header au lieu de passer dessous.
+       3. L'AIMANTATION des blocs plein écran : c'est ce qui remplace le
+          `scroll-margin-top` que portait chaque `[data-snap-section]`. Même
+          résultat au pixel — la position d'aimantation vaut
+          `haut du bloc - scroll-padding-top` au lieu de
+          `haut du bloc - scroll-margin-top` — mais posé UNE fois sur le
+          conteneur de défilement plutôt que répété sur chaque cible, et donc
+          valable aussi pour les deux points ci-dessus.
+
+       ⚠️ Ne jamais remettre un `scroll-margin-top` sur les blocs aimantés : les
+       deux s'additionneraient et l'aimantation s'arrêterait 4rem trop bas. */
+    scroll-padding-top: var(--spacing-header);
+  }
+
+  /* AIMANTATION DU SCROLL SUR LES BLOCS PLEIN ÉCRAN
+     ------------------------------------------------
+     Sans elle, une page faite de blocs d'une hauteur d'écran s'arrête n'importe
+     où : on voit en permanence la fin d'un bloc et le début du suivant, et le
+     défilement n'a aucun point de repos. L'aimantation ramène le scroll au début
+     du bloc le plus proche dès qu'on relâche.
+
+     `:has()` plutôt qu'une classe sur <body> : l'aimantation doit se déclencher
+     SEULE sur les pages qui contiennent des blocs plein écran, et le root layout
+     est partagé par toutes les pages. Sur /collection, où la grille est longue
+     et n'a aucun découpage en écrans, aimanter serait pénible — et ici, rien à
+     brancher ni à oublier de retirer.
+
+     `proximity` et non `mandatory` : `mandatory` oblige le scroll à finir sur un
+     bloc, or le footer n'en est pas un — il ferait moins d'un écran et on ne
+     pourrait plus s'y arrêter. `proximity` n'aimante que si on relâche déjà près
+     d'un bloc. Un seul mot à changer si le rendu manque de fermeté. */
+  html:has([data-snap-section], [data-snap-center]) {
+    scroll-snap-type: y proximity;
+  }
+
+  /* Le décalage sous le header collant n'est PLUS déclaré ici : il est passé en
+     `scroll-padding-top` sur <html>, une fois pour tout le site (voir plus haut
+     dans ce fichier). Y remettre un `scroll-margin-top` ferait doublon et
+     arrêterait l'aimantation 4rem trop bas. */
+  [data-snap-section] {
+    scroll-snap-align: start;
+  }
+
+  /* POINT D'ARRÊT CENTRÉ, pour un élément qui n'est PAS un bloc plein écran.
+     ------------------------------------------------------------------------
+     `start` cale le HAUT d'un bloc sur le haut de l'écran : c'est ce qu'on veut
+     d'un bloc qui fait précisément une hauteur d'écran, puisque le caler en haut
+     revient à le montrer en entier.
+
+     `center` répond à un autre besoin : une image posée au milieu d'un bloc plus
+     long que l'écran. La caler en haut couperait tout ce qui la suit ; la
+     centrer, c'est s'arrêter sur elle. Concrètement, le scroll se repose avec
+     l'œuvre au milieu de l'écran au lieu de s'immobiliser n'importe où sur un
+     bloc éditorial.
+
+     Le centrage tient compte du `scroll-padding-top` posé sur <html> : l'œuvre
+     est centrée dans l'écran MOINS le header collant, donc optiquement au
+     milieu de ce qu'on voit réellement. */
+  [data-snap-center] {
+    scroll-snap-align: center;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    /* Interligne serré par défaut, adapté aux titres. Les blocs de texte long
+       repassent explicitement en leading-relaxed. */
+    line-height: 1.2;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Texte en attente de révélation (composant TextReveal).
+
+     Le HTML est rendu par le serveur, donc peint avant que le JS s'exécute. Sans
+     cet état initial, on verrait le titre, puis il disparaîtrait le temps que
+     GSAP découpe les lignes, puis il réapparaîtrait.
+
+     Le filet de sécurité est l'animation : si le JS ne part jamais (erreur,
+     script bloqué), `reveal-fallback` réaffiche le texte au bout de 2s. Un titre
+     ne doit jamais rester invisible à cause d'une animation qui n'a pas démarré.
+     Quand GSAP prend la main, il retire l'attribut et cette règle ne s'applique
+     plus. */
+  [data-reveal] {
+    opacity: 0;
+    animation: reveal-fallback 0.3s ease-out 2s forwards;
+  }
+
+  @keyframes reveal-fallback {
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Jambages non rognés dans le masque de TextReveal.
+
+     SplitText enveloppe chaque ligne dans un clone en `overflow: clip` qui fait
+     exactement la hauteur de la ligne. Or --text-display a un interlignage de
+     1.02 : les jambages (le q de « que », g, p, y) descendent sous cette boîte
+     et se font couper net.
+
+     `overflow-clip-margin` repousse la zone de rognage sans toucher à la boîte :
+     c'est la seule façon d'y arriver SANS déplacer quoi que ce soit. La solution
+     réflexe — padding sur la ligne, marge négative sur le masque — marcherait
+     visuellement, mais la marge négative du dernier masque se propagerait hors
+     du titre et remonterait le paragraphe qui suit.
+
+     En em, pour suivre la taille du texte et donc le rem fluide. Seule valeur à
+     ajuster si des accents ou des jambages dépassent encore. */
+  .reveal-line-mask {
+    overflow-clip-margin: 0.25em;
+  }
+
+  /* Accessibilité : un focus toujours visible au clavier, jamais à la souris. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+
+  /* Sur les blocs à fond sombre (Header, Footer, Section tone="ink"), le contour
+     ci-dessus est de la couleur du fond : il disparaît purement et simplement,
+     et la navigation au clavier devient impossible à suivre. On l'inverse. */
+  [data-tone="ink"] :focus-visible {
+    outline-color: var(--color-paper);
+  }
+
+  /* Respecte les utilisateurs qui ont désactivé les animations dans leur OS.
+     Indispensable avant d'introduire GSAP. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore-start lint/complexity/noImportantStyles: seule façon fiable
+         de neutraliser des animations déclarées ailleurs, y compris par GSAP */
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      /* biome-ignore-end lint/complexity/noImportantStyles: fin de l'exception */
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------------------------------------------------------------------------
+   Utilitaires maison
+--------------------------------------------------------------------------- */
+
+/* Masque la barre de défilement SANS retirer le défilement lui-même.
+
+   Réservé à un cas précis : un conteneur qui doit rester atteignable jusqu'en
+   bas, mais dont la barre est du bruit visuel — la colonne de filtres, qui ne
+   dépasse la hauteur de l'écran que sur une fenêtre courte, et dont la barre
+   apparaissait puis disparaissait au gré des filtres cochés.
+
+   À ne pas généraliser : masquer une barre sur une zone réellement longue rend
+   son contenu indécouvrable. Ici le contenu reste accessible à la molette et le
+   focus clavier y fait défiler tout seul. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

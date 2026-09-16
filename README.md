@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# museePhoto
 
-## Getting Started
+Site d'un musée de peinture, construit avec Next.js sur l'API
+[`api-museum.vercel.app`](https://api-museum.vercel.app) fournie en cours : 39 œuvres
+majeures, de la Renaissance italienne au surréalisme.
 
-First, run the development server:
+> Le dépôt s'appelle encore `museePhoto` : le projet visait d'abord un musée de la
+> photographie sur l'API du Metropolitan Museum, avant de basculer sur l'API du cours —
+> qui ne contient aucune photographie.
+
+Projet individuel noté — M2 DEV, ECV. Le sujet complet est dans [docs/brief.md](docs/brief.md).
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** (React Compiler)
+- **TypeScript**
+- **Tailwind CSS v4** — configuration CSS-first dans `src/app/globals.css`
+- **Biome** pour le lint et le formatage
+- **pnpm** comme gestionnaire de paquets
+- Déploiement sur **Vercel**
+
+## Démarrer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Le site est servi sur [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Derrière un proxy d'entreprise
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Si la collection s'affiche en erreur et que la console montre
+`UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, le réseau inspecte le trafic HTTPS et Node refuse le
+certificat de l'API. Ce n'est pas un bug du site. Deux contournements :
 
-## Learn More
+```bash
+# Propre : indiquer le certificat racine de l'entreprise
+NODE_EXTRA_CA_CERTS=/chemin/vers/ca-entreprise.pem pnpm dev
 
-To learn more about Next.js, take a look at the following resources:
+# Rapide, développement uniquement : désactiver la vérification TLS
+NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Aucun des deux n'est nécessaire hors de ce réseau, ni sur Vercel.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Commandes
 
-## Deploy on Vercel
+| Commande | Rôle |
+|---|---|
+| `pnpm dev` | Serveur de développement |
+| `pnpm build` | Build de production — vérifie aussi les types TypeScript |
+| `pnpm lint` | Biome : lint + format (lecture seule) |
+| `pnpm format` | Biome : corrige le formatage |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/            Routing (App Router) + tokens de design dans globals.css
+├── components/     ui/ · layout/ · artwork/ · sections/
+├── lib/            Utilitaires, constantes, appels API
+├── types/          Types TypeScript partagés
+└── data/           Contenus statiques FR
+```
+
+## Documentation
+
+| Fichier | Contenu |
+|---|---|
+| [CLAUDE.md](CLAUDE.md) | Conventions de code, décisions de design, pièges de Next.js 16 |
+| [docs/roadmap.md](docs/roadmap.md) | Avancement étape par étape |
+| [docs/api-museum.md](docs/api-museum.md) | Contrat **réel** de l'API, et ses écarts avec la doc du cours |
+| [docs/retour-critique.md](docs/retour-critique.md) | Compte-rendu critique de Next.js — livrable du rendu |
