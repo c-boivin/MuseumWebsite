@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Feuille de style de Lenis (défilement amorti, voir `motion/SmoothScroll`).
+   Trois lignes utiles : `height: auto` sur <html> et <body>, sans quoi la page
+   est mesurée avec la hauteur de la fenêtre au lieu de celle du contenu et
+   l'amortissement n'a plus de course ; `overscroll-behavior: contain` sur les
+   zones à ascenseur propre ; et la neutralisation des iframes pendant le
+   défilement. Elle n'est dans aucune couche, elle bat donc les utilitaires
+   Tailwind — c'est voulu, c'est ce qui lui permet d'écraser un `h-full`. */
+@import "lenis/dist/lenis.css";
+
 /* ---------------------------------------------------------------------------
    Design tokens
    ---------------------------------------------------------------------------
@@ -27,6 +36,32 @@
   --color-line: #e4e1dc;
   --color-accent: #8a6f4e;
 
+  /* Refus d'un formulaire. La seule couleur du site qui ne serve pas à
+     composer une page mais à interrompre une action — d'où son écart avec la
+     palette, qui est tout l'intérêt : une erreur qui se fond dans le décor
+     n'est pas lue.
+
+     ELLE EST ACCORDÉE AU FOND SOMBRE : les pages de connexion, d'inscription et
+     de mot de passe oublié sont en `tone="ink"`. Posée sur le papier, elle
+     serait trop claire pour rester lisible.
+
+     La teinte descend du rouge pigment du site (`hue-rouge`, #a3322c),
+     éclaircie jusqu'à tenir le contraste sur du noir. */
+  --color-danger: #d98474;
+
+  /* LE SECOND TOKEN ANNONCÉ JUSTE AU-DESSUS, arrivé avec les formulaires de
+     `/compte/profil` — modification du compte, mot de passe, suppression —
+     qui sont sur le papier du site et non sur fond sombre.
+
+     Ce n'est pas une nuance de plus dans la palette : sur #faf9f7, le `danger`
+     ci-dessus tombe à un rapport de contraste d'environ 2,5:1, c'est-à-dire
+     sous le minimum lisible pour du texte. Un compromis entre les deux aurait
+     été médiocre des deux côtés — d'où deux valeurs, comme `ink` et `ink-deep`.
+
+     Elle est le rouge pigment assombri d'un cran : assez foncée pour tenir sur
+     du clair, assez rabattue pour ne pas crier à côté des reproductions. */
+  --color-danger-deep: #8f2e24;
+
   /* Pastilles du filtre « teinte dominante » de la collection.
      Ce ne sont PAS des couleurs d'interface : elles ne servent qu'à représenter
      une famille chromatique dans les filtres. Elles vivent quand même ici, parce
@@ -42,15 +77,71 @@
   --color-hue-brun: #7a5230;
   --color-hue-gris: #6f6b66;
 
-  /* Typographie. Les valeurs correspondent à la maquette de référence 1440px :
-     5rem = 80px à 1440. Pas de clamp() — le rem fluide fait déjà le travail. */
+  /* ÉCHELLE TYPOGRAPHIQUE — UN PALIER PAR RÔLE, PAS PAR TAILLE.
+     ---------------------------------------------------------------------
+     Les valeurs correspondent à la maquette de référence 1440px : 5rem = 80px
+     à 1440. Pas de clamp() — le rem fluide fait déjà le travail.
+
+     LA RÈGLE, et c'est elle qui a manqué : la taille suit le RÔLE du bloc, pas
+     la balise. Un <h1> ne vaut pas une taille, il vaut un niveau sémantique ;
+     c'est le bloc qui l'entoure qui décide de sa taille. D'où les deux props
+     séparées de `ui/Heading` (`as` pour le sens, `size` pour le corps), et d'où
+     ces noms : ils nomment un emploi, jamais une dimension.
+
+     Un titre qui ne rentre dans aucun de ces paliers signale un rôle de plus
+     qu'on n'avait pas prévu — c'est alors ICI qu'on tranche, jamais par un
+     `text-xl` posé dans un composant. L'échelle a longtemps sauté de `title`
+     (2.75rem) à `text-xl` (1.25rem) : tous les titres de section tombaient donc
+     à la taille exacte d'un paragraphe de chapeau, et la hiérarchie n'existait
+     plus en dessous du titre de page.
+
+       display  Le titre d'un bloc d'accroche plein écran. Un par page au plus.
+       figure   Un chiffre mis en scène — la série de l'accueil.
+       title    Le titre d'un en-tête de page compact, ou d'un bloc éditorial.
+       heading  Le titre d'une sous-section, d'un panneau, d'une carte.
+       subhead  Un titre d'œuvre ou un nom propre dans une liste.
+       lead     Le chapeau. SEUL palier de cette liste en sans — voir plus bas.
+
+     LES CINQ PREMIERS SONT EN SERIF (`font-display`), le sixième en sans, et
+     c'est la frontière du site : le serif TITRE et met en scène, le sans
+     INFORME. En dessous de `lead`, on retombe sur l'échelle de Tailwind
+     (`text-base`, `text-sm`, `text-xs`), qui est du corps de texte et n'a pas
+     besoin d'être renommée. */
   --text-display: 5rem;
   --text-display--line-height: 1.02;
   --text-display--letter-spacing: -0.03em;
 
+  /* 3.5rem et non 5rem : à la taille `display`, les trois chiffres de l'accueil
+     pesaient autant que le titre du Hero et les deux se disputaient la page. Un
+     cran en dessous, ils restent un temps fort sans prétendre au premier rôle.
+     Ils étaient AUSSI affichés en 2.75rem par le bloc éditorial plus bas — même
+     balisage, même nature, presque du simple au double. Ce palier existe pour
+     qu'il n'y ait plus qu'une réponse à « quelle taille fait un chiffre clé ». */
+  --text-figure: 3.5rem;
+  --text-figure--line-height: 1;
+  --text-figure--letter-spacing: -0.02em;
+
   --text-title: 2.75rem;
   --text-title--line-height: 1.1;
   --text-title--letter-spacing: -0.02em;
+
+  /* LE PALIER QUI MANQUAIT. Sans lui, « Tarifs d'entrée », les chapitres de À
+     propos et « Votre panier » s'écrivaient en `text-xl` — 1.25rem, c'est-à-dire
+     la taille d'un chapeau : un titre de section ne se distinguait plus du texte
+     qu'il annonce. Et il passait en sans, donc la signature serif du site
+     s'arrêtait aux titres de page sans jamais descendre dans les sections. */
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.015em;
+
+  /* Même corps que `lead`, autre métier : un titre d'œuvre dans une liste, un
+     nom propre. D'où l'interligne serré — 1.55 est fait pour un paragraphe de
+     plusieurs lignes, pas pour une ligne unique tronquée. Les deux existent
+     séparément pour que changer le confort de lecture d'un chapeau ne déplace
+     pas les cartels de la sélection. */
+  --text-subhead: 1.25rem;
+  --text-subhead--line-height: 1.3;
+  --text-subhead--letter-spacing: -0.01em;
 
   --text-lead: 1.25rem;
   --text-lead--line-height: 1.55;
@@ -69,6 +160,23 @@
      `svh` et non `vh` : sur un navigateur qui rétracte sa barre d'outils, `vh`
      mesure la fenêtre la plus GRANDE et le bloc dépasserait au chargement. */
   --spacing-viewport: calc(100svh - var(--spacing-header));
+
+  /* Hauteur MAXIMALE d'une reproduction dans un bloc plein écran (Hero de
+     l'accueil, bandeau de la sélection).
+
+     `--spacing-viewport` ne donne qu'un minimum : dans ces blocs, la colonne de
+     l'œuvre est étirée sur toute la hauteur restante, alors que sa LARGEUR, elle,
+     vient de la grille — donc de la largeur de l'écran. Sur une fenêtre haute et
+     étroite, les deux divergent : l'œuvre s'étire en un portrait démesuré pendant
+     que le texte à côté rétrécit, puisque le rem du site suit la largeur.
+
+     Ce plafond en rem raccroche la hauteur de l'œuvre à la même échelle que tout
+     le reste : la proportion du bloc devient constante, quelle que soit la
+     hauteur de la fenêtre. 34rem = 544px sur la maquette 1440 — au-dessus de ce
+     qu'un écran 1440x900 laisse réellement à l'œuvre, donc le plafond ne change
+     RIEN à la mise en page de référence : il ne se déclenche que sur les fenêtres
+     anormalement hautes. */
+  --spacing-artwork: 34rem;
 
   /* Rythme vertical des sections */
   --spacing-section: 7.5rem;
@@ -89,7 +197,7 @@
 /* Les polices sont chargées par next/font dans le root layout, qui expose
    des variables CSS. `inline` est nécessaire ici car on référence ces variables. */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit);
   --font-display: var(--font-instrument-serif);
 }
 
@@ -116,7 +224,12 @@
 
     /* Supprime l'effet de rebond en fin de scroll. */
     overscroll-behavior: none;
-    scroll-behavior: smooth;
+
+    /* PAS de `scroll-behavior: smooth` : c'est Lenis qui amortit le défilement
+       depuis `motion/SmoothScroll`. Les deux ne peuvent pas coexister — le
+       navigateur animerait une position que Lenis réécrit à chaque frame, et on
+       verrait la page hésiter entre les deux. Son retrait est aussi ce qui rend
+       inutile le `data-scroll-behavior="smooth"` du root layout. */
 
     /* HAUTEUR RÉSERVÉE AU HEADER COLLANT EN HAUT DE TOUT DÉFILEMENT.
        ----------------------------------------------------------------
@@ -137,66 +250,39 @@
           est reconnu comme « pas en haut » et la remontée se fait.
        2. LES ANCRES (#id) et tout `scrollIntoView` : la cible se cale sous le
           header au lieu de passer dessous.
-       3. L'AIMANTATION des blocs plein écran : c'est ce qui remplace le
-          `scroll-margin-top` que portait chaque `[data-snap-section]`. Même
-          résultat au pixel — la position d'aimantation vaut
-          `haut du bloc - scroll-padding-top` au lieu de
-          `haut du bloc - scroll-margin-top` — mais posé UNE fois sur le
-          conteneur de défilement plutôt que répété sur chaque cible, et donc
-          valable aussi pour les deux points ci-dessus.
+       3. LES ANCRES PRISES EN CHARGE PAR LENIS, qui sont désormais toutes
+          celles de la page courante (#contenu, #tarifs, #panier). Son
+          `scrollTo` lit le `scroll-padding-top` du conteneur de défilement et
+          le soustrait à la position visée — vérifié dans
+          `node_modules/lenis/dist/lenis.mjs`. Le défilement amorti s'arrête
+          donc au même pixel que le saut natif d'avant, sans réglage à part.
 
-       ⚠️ Ne jamais remettre un `scroll-margin-top` sur les blocs aimantés : les
-       deux s'additionneraient et l'aimantation s'arrêterait 4rem trop bas. */
+       ⚠️ Un `scroll-margin-top` posé sur une cible d'ancre s'AJOUTE à ce
+       décalage, dans les deux cas. C'est parfois voulu (le panier de la
+       billetterie l'utilise pour ne pas arriver collé à son bord haut), jamais
+       par accident. */
     scroll-padding-top: var(--spacing-header);
   }
 
-  /* AIMANTATION DU SCROLL SUR LES BLOCS PLEIN ÉCRAN
-     ------------------------------------------------
-     Sans elle, une page faite de blocs d'une hauteur d'écran s'arrête n'importe
-     où : on voit en permanence la fin d'un bloc et le début du suivant, et le
-     défilement n'a aucun point de repos. L'aimantation ramène le scroll au début
-     du bloc le plus proche dès qu'on relâche.
+  /* PLUS D'AIMANTATION DU SCROLL, ET C'EST UN ARBITRAGE, PAS UN OUBLI.
+     ------------------------------------------------------------------
+     Il y avait ici un `scroll-snap-type: y proximity` sur <html> et deux
+     repères, `[data-snap-section]` (haut du bloc calé en haut de l'écran) et
+     `[data-snap-center]` (élément centré dans l'écran) : les blocs plein écran
+     du site avaient ainsi des points de repos.
 
-     `:has()` plutôt qu'une classe sur <body> : l'aimantation doit se déclencher
-     SEULE sur les pages qui contiennent des blocs plein écran, et le root layout
-     est partagé par toutes les pages. Sur /collection, où la grille est longue
-     et n'a aucun découpage en écrans, aimanter serait pénible — et ici, rien à
-     brancher ni à oublier de retirer.
+     Lenis, branché depuis `motion/SmoothScroll`, ne sait pas cohabiter avec eux
+     — « no support for CSS scroll-snap » dit son README, qui renvoie vers un
+     plugin séparé, `lenis/snap`. Le piège est le silence : garder ces règles
+     n'aurait produit ni erreur ni avertissement, juste des déclarations sans
+     effet, puisque le scroll n'est plus piloté par le navigateur. Entre
+     réécrire les points d'arrêt en JavaScript et renoncer à l'aimantation, on a
+     choisi le défilement amorti seul : c'est lui qu'on ressent sur toute la
+     page, l'aimantation ne se jouait qu'aux frontières de blocs.
 
-     `proximity` et non `mandatory` : `mandatory` oblige le scroll à finir sur un
-     bloc, or le footer n'en est pas un — il ferait moins d'un écran et on ne
-     pourrait plus s'y arrêter. `proximity` n'aimante que si on relâche déjà près
-     d'un bloc. Un seul mot à changer si le rendu manque de fermeté. */
-  html:has([data-snap-section], [data-snap-center]) {
-    scroll-snap-type: y proximity;
-  }
-
-  /* Le décalage sous le header collant n'est PLUS déclaré ici : il est passé en
-     `scroll-padding-top` sur <html>, une fois pour tout le site (voir plus haut
-     dans ce fichier). Y remettre un `scroll-margin-top` ferait doublon et
-     arrêterait l'aimantation 4rem trop bas. */
-  [data-snap-section] {
-    scroll-snap-align: start;
-  }
-
-  /* POINT D'ARRÊT CENTRÉ, pour un élément qui n'est PAS un bloc plein écran.
-     ------------------------------------------------------------------------
-     `start` cale le HAUT d'un bloc sur le haut de l'écran : c'est ce qu'on veut
-     d'un bloc qui fait précisément une hauteur d'écran, puisque le caler en haut
-     revient à le montrer en entier.
-
-     `center` répond à un autre besoin : une image posée au milieu d'un bloc plus
-     long que l'écran. La caler en haut couperait tout ce qui la suit ; la
-     centrer, c'est s'arrêter sur elle. Concrètement, le scroll se repose avec
-     l'œuvre au milieu de l'écran au lieu de s'immobiliser n'importe où sur un
-     bloc éditorial.
-
-     Le centrage tient compte du `scroll-padding-top` posé sur <html> : l'œuvre
-     est centrée dans l'écran MOINS le header collant, donc optiquement au
-     milieu de ce qu'on voit réellement. */
-  [data-snap-center] {
-    scroll-snap-align: center;
-  }
+     Donc : ne pas remettre de `scroll-snap-*` ici, il ne se passerait rien. Si
+     les points d'arrêt manquent vraiment, c'est `lenis/snap` qu'il faut
+     brancher (déjà présent dans le paquet installé), pas du CSS. */
 
   body {
     background-color: var(--color-paper);
@@ -215,18 +301,65 @@
      GSAP découpe les lignes, puis il réapparaîtrait.
 
      Le filet de sécurité est l'animation : si le JS ne part jamais (erreur,
-     script bloqué), `reveal-fallback` réaffiche le texte au bout de 2s. Un titre
-     ne doit jamais rester invisible à cause d'une animation qui n'a pas démarré.
-     Quand GSAP prend la main, il retire l'attribut et cette règle ne s'applique
-     plus. */
+     script bloqué), `reveal-fallback` réaffiche le texte. Un titre ne doit jamais
+     rester invisible à cause d'une animation qui n'a pas démarré. Quand GSAP
+     prend la main, il retire l'attribut et cette règle ne s'applique plus.
+
+     ⚠️ LE DÉLAI DOIT COUVRIR LE PRELOADER, et c'est tout l'enjeu de ces deux
+     règles. Il valait 2 s, soit MOINS que l'intro (2 s d'onde + 1,65 s de
+     sortie) : le repli se déclenchait donc en fonctionnement NORMAL, derrière le
+     panneau noir. Le titre arrivait à pleine opacité pendant qu'on ne le voyait
+     pas ; le panneau s'ouvrait sur une page posée ; puis `endIntro` autorisait
+     enfin TextReveal, qui découpait le titre et le renvoyait sous son masque
+     avant de le remonter. D'où le saut incompréhensible à la fin du loader — on
+     croyait à un rechargement de la page, c'était le repli qui avait grillé la
+     politesse à l'animation.
+
+     5 s se déduit donc de l'intro, comme les 8 s du panneau plus bas : il faut
+     rester au-dessus de TURNS × CYCLE + 1,65 s + le chargement des polices. À
+     réajuster avec elles. */
   [data-reveal] {
     opacity: 0;
-    animation: reveal-fallback 0.3s ease-out 2s forwards;
+    animation: reveal-fallback 0.3s ease-out 5s forwards;
+  }
+
+  /* Pas d'intro à couvrir — elle est sautée (script en ligne du Preloader) ou
+     déjà terminée (l'attribut est reposé à la fin de sa timeline) : la page est
+     à l'écran tout de suite, et un titre invisible pendant 5 s serait absurde.
+     On revient au délai court, qui ne protège plus que de la panne de JS. */
+  html[data-intro-done] [data-reveal] {
+    animation-delay: 1.5s;
   }
 
   @keyframes reveal-fallback {
     to {
       opacity: 1;
+    }
+  }
+
+  /* REPLI DU PRELOADER — même principe que celui de `[data-reveal]` ci-dessus,
+     avec un enjeu bien plus lourd : le panneau d'intro recouvre l'écran entier
+     et c'est GSAP qui le retire. Si le JavaScript est là mais échoue en cours de
+     route, le site devient un rectangle noir.
+
+     Le cas « JavaScript désactivé » est traité ailleurs, par un <noscript> dans
+     le composant : le panneau ne s'affiche alors pas du tout. Cette règle-ci ne
+     couvre que l'autre panne, celle où le script est bien chargé mais n'arrive
+     pas au bout.
+
+     8 s, et le chiffre se déduit : l'intro dure TURNS × CYCLE secondes (2 × 1 s
+     aujourd'hui, voir le composant), plus 1,65 s d'animation de sortie, plus
+     l'attente des polices. Un délai plus court couperait une intro simplement
+     lente sur un réseau médiocre. En fonctionnement normal le composant est
+     démonté bien avant et cette règle ne s'applique jamais — elle n'existe que
+     pour la panne. À réajuster si TURNS ou CYCLE changent beaucoup. */
+  [data-intro] {
+    animation: intro-fallback 0.5s ease-out 8s forwards;
+  }
+
+  @keyframes intro-fallback {
+    to {
+      clip-path: inset(0% 0% 100% 0%);
     }
   }
 
@@ -286,6 +419,28 @@
    Utilitaires maison
 --------------------------------------------------------------------------- */
 
+/* LE SUR-TITRE — le petit libellé en capitales espacées qui coiffe un bloc.
+
+   Il était recopié À L'IDENTIQUE dans huit fichiers :
+   `font-medium text-xs uppercase tracking-[0.2em]`. Huit copies, donc huit
+   occasions de diverger, et surtout huit `tracking-[0.2em]` en dur — une valeur
+   arbitraire dans un composant, exactement ce que la règle des tokens interdit.
+
+   Utilitaire CSS et non composant React, parce que la BALISE change à chaque
+   emploi : <p> au-dessus d'un titre, <legend> sur un groupe de cases,
+   <label> sur un champ. Un composant aurait exigé une prop `as` pour ne rien
+   apporter de plus.
+
+   Il ne porte PAS la couleur : elle dépend du fond (`text-ink-mute` sur clair,
+   `text-paper/50` sur sombre) et reste donc à côté dans le className. */
+@utility eyebrow {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
 /* Masque la barre de défilement SANS retirer le défilement lui-même.
 
    Réservé à un cas précis : un conteneur qui doit rester atteignable jusqu'en
@@ -302,4 +457,228 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   L'INTRO A DÉJÀ ÉTÉ JOUÉE DANS CET ONGLET : on masque le panneau AVANT qu'il
+   soit dessiné.
+   ---------------------------------------------------------------------------
+   L'attribut est posé par un script en ligne exécuté pendant l'analyse du HTML
+   (voir `motion/Preloader.tsx`, constante SKIP_INTRO_SCRIPT) et non par React :
+   le panneau fait partie du HTML envoyé par le serveur, donc un effet React ne
+   pourrait le retirer qu'après l'hydratation — trop tard, l'écran noir a déjà
+   été peint. Le cas se produit à chaque 404, que Next traite par un rechargement
+   complet du document.
+
+   ⚠️ CETTE RÈGLE EST VOLONTAIREMENT HORS DE TOUT `@layer`, et c'est la seule du
+   fichier dans ce cas. Placée dans `@layer base`, elle ne marchait pas : le
+   panneau porte la classe utilitaire `flex`, qui déclare `display: flex` dans la
+   couche `utilities`. Or une couche l'emporte sur la précédente QUELLE QUE SOIT
+   la spécificité des sélecteurs — `utilities` bat `base` même face à un
+   sélecteur bien plus précis. Le panneau restait donc affiché le temps que React
+   le retire, c'est-à-dire exactement le flash qu'on cherchait à supprimer.
+
+   Le CSS non affecté à une couche, lui, passe AVANT toutes les couches dans la
+   cascade : c'est le seul endroit d'où cette règle gagne sans `!important`.
+   (C'est aussi pour ça que le <style> du <noscript>, en ligne donc sans couche,
+   fonctionnait déjà.)
+
+   `display: none` et non l'animation de sortie : il ne s'agit pas de refermer
+   l'intro, il s'agit qu'elle n'ait jamais lieu.
+--------------------------------------------------------------------------- */
+html[data-intro-done] [data-intro] {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   LE CURSEUR DU SYSTÈME EST REMPLACÉ PAR LE POINT (`motion/Cursor`).
+   ---------------------------------------------------------------------------
+   L'ATTRIBUT EST LA SÉCURITÉ, ET C'EST TOUT L'INTÉRÊT DE L'ÉCRIRE AINSI.
+   `data-cursor-on` n'est pas posé par le serveur : c'est le composant qui
+   l'ajoute, en JavaScript, APRÈS s'être assuré qu'il peut dessiner un
+   remplaçant — souris fine, animations non désactivées. Script bloqué, erreur
+   d'hydratation, JavaScript coupé, écran tactile : l'attribut n'arrive jamais,
+   cette règle ne s'applique pas, et le curseur du système n'a jamais disparu.
+   Écrit en dur sur `html`, le moindre incident produirait un site sans curseur,
+   donc un site inutilisable. La panne doit tomber du bon côté.
+
+   ⚠️ HORS DE TOUT `@layer`, comme la règle du preloader juste au-dessus, et pour
+   la même raison de cascade. `cursor` est une propriété HÉRITÉE : la déclarer
+   sur <html> suffirait pour tout ce qui n'en déclare pas. Mais plusieurs
+   composants posent le leur (`cursor-pointer` sur les libellés de
+   CheckboxGroup, `disabled:cursor-not-allowed` sur Button et QuantityStepper),
+   et ces classes vivent dans la couche `utilities` — qui bat `base` quelle que
+   soit la spécificité. La flèche du système serait donc réapparue exactement
+   là où le point est le plus utile : sur les éléments cliquables. Hors couche,
+   la règle passe avant toutes les couches et le sélecteur universel suffit.
+
+   La seconde règle rend le caret aux champs de saisie. Elle est plus spécifique
+   ET écrite après : elle gagne sans `!important`. Le point, de son côté,
+   s'efface tout seul sur ces mêmes champs — les deux moitiés du même
+   comportement, l'une ici, l'autre dans le composant.
+--------------------------------------------------------------------------- */
+html[data-cursor-on],
+html[data-cursor-on] * {
+  cursor: none;
+}
+
+html[data-cursor-on]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]),
+    textarea,
+    [contenteditable="true"]
+  ) {
+  cursor: text;
+}
+
+/* ---------------------------------------------------------------------------
+   CHAMP REMPLI PAR LE NAVIGATEUR : NEUTRALISER L'APLAT QU'IL IMPOSE
+   ---------------------------------------------------------------------------
+   Chrome et Edge peignent un fond bleu pâle derrière tout champ qu'ils ont
+   rempli eux-mêmes, et écrivent le texte en noir par-dessus. Sur les champs en
+   filet des pages de compte, posés sur du noir, ça donne deux rectangles bleu
+   clair en travers de la page : l'identité visuelle disparaît au moment précis
+   où l'on arrive sur le formulaire.
+
+   Ce fond ne se surcharge PAS avec `background-color` : le moteur l'applique
+   par-dessus la feuille de style. Deux propriétés propriétaires permettent de
+   le contourner, chacune sur une moitié du problème — et une troisième ligne,
+   plus incertaine, tente de récupérer la police.
+
+   1. LE FOND. Le navigateur l'applique par une TRANSITION de
+      `background-color`. Une transition de 10 000 s ne l'atteint jamais — le
+      champ garde donc le fond qu'on lui a demandé, ici transparent. La
+      `border-color` est relistée derrière, sinon cette déclaration remplace la
+      transition du filet et la bordure passerait d'un coup au focus.
+   2. LE TEXTE. `-webkit-text-fill-color` bat `color`, et c'est la seule façon
+      de le repeindre : Chrome force AUSSI la `color` de l'élément en noir, par
+      un style interne qu'on ne peut pas surcharger. Conséquence contre-intuitive
+      et coûteuse : écrire `-webkit-text-fill-color: currentColor` ne répare
+      rien, puisque `currentColor` résout justement ce noir imposé — sur le fond
+      sombre des pages de compte, le champ paraît vide alors qu'il est rempli,
+      ce qui est pire que le rectangle bleu.
+
+      La couleur doit donc être ÉCRITE, et elle suit le `data-tone` du bloc
+      parent — le même attribut qui sert déjà à inverser le contour de focus
+      (voir `@layer base`). Le champ lui-même n'a rien à déclarer.
+
+   ⚠️ HORS DE TOUT `@layer`, comme les deux règles ci-dessus et pour la même
+   raison — c'est même ici que le piège coûte le plus cher, parce que la règle
+   échouait SANS rien casser d'autre. Écrite dans `@layer base`, sa déclaration
+   `transition` perdait contre le `transition-colors duration-200` du champ, qui
+   est un utilitaire Tailwind : la couche `utilities` bat `base` quelle que soit
+   la spécificité des sélecteurs. La transition de 10 000 s était donc remplacée
+   par celle de 200 ms, le fond bleu arrivait comme avant, et la moitié « texte »
+   de la règle continuait de s'appliquer — on obtenait du texte clair sur fond
+   bleu clair, soit pire qu'avant correction.
+
+   Aucun équivalent standard à ce jour. Firefox, lui, ne repeint rien.
+--------------------------------------------------------------------------- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-ink);
+  caret-color: var(--color-ink);
+  transition:
+    background-color 10000s ease-in-out 0s,
+    border-color 200ms ease;
+
+  /* 3. LA POLICE. Chrome rend la valeur pré-remplie dans une autre typographie
+        que le reste du formulaire, et le contraste saute aux yeux sur un site
+        dont toute l'identité tient à deux polices choisies. `font: inherit`
+        redemande celle du parent — c'est ce que fait déjà la base Tailwind sur
+        les champs, on le rejoue simplement ici où le navigateur passe devant.
+
+        ⚠️ CETTE LIGNE PEUT NE RIEN CHANGER, et il faut le savoir avant de la
+        croire cassée. Tant que l'utilisateur n'a pas touché la page, Chrome
+        n'affiche pas une valeur mais un APERÇU, qu'il peint lui-même — c'est le
+        même état que celui où `input.value` reste vide (voir `lib/autofill.ts`).
+        S'il impose sa typographie par un style interne `!important`, aucune
+        feuille de style de page ne peut le reprendre : dans la cascade CSS, le
+        `!important` du navigateur bat celui de l'auteur. Le défaut disparaît
+        alors de lui-même au premier clic, quand l'aperçu devient une vraie
+        valeur. Ne pas empiler des `!important` ici en espérant gagner : c'est
+        perdu d'avance, et ça laisserait croire l'inverse au prochain lecteur. */
+  font: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   AUTOFILL, SECONDE MOITIÉ : PRÉVENIR LE JAVASCRIPT
+   ---------------------------------------------------------------------------
+   Le bloc ci-dessus règle l'APPARENCE d'un champ prérempli. Celui-ci règle un
+   problème distinct et invisible : le JavaScript ne sait pas qu'il l'est.
+
+   Quand Chrome remplit un formulaire de connexion à l'arrivée sur la page, il
+   n'expose pas les valeurs aux scripts tant que l'utilisateur n'a pas touché la
+   page — une protection contre les pages qui liraient un mot de passe
+   enregistré sans que personne n'ait rien fait. `input.value` vaut donc `""` sur
+   un champ visiblement plein : la croix d'effacement de `ui/Field` ne s'affiche
+   pas, et le bouton de `ui/SubmitButton` reste éteint devant un formulaire
+   complet. Au premier clic, Chrome livre tout d'un coup et l'interface se
+   répare toute seule — d'où le symptôme : cliquer dans UN champ réveille les DEUX.
+
+   Il n'émet aucun événement, mais la pseudo-classe, elle, se met à correspondre
+   tout de suite. On lui accroche donc une animation d'une milliseconde qui ne
+   change RIEN à l'écran : elle n'existe que pour déclencher un `animationstart`,
+   le seul crochet JavaScript disponible. `ui/Field` et `ui/SubmitButton`
+   l'écoutent, via `lib/autofill.ts`.
+
+   ⚠️ LE NOM DE L'ANIMATION EST REPRIS EN DUR dans `lib/autofill.ts`
+   (`AUTOFILL_ANIMATION`). Rien ne vérifie que les deux concordent : le renommer
+   d'un seul côté ne produit aucune erreur, les champs préremplis redeviennent
+   simplement inertes.
+
+   Deux règles séparées et non une liste de sélecteurs : un navigateur qui ne
+   connaît pas `:autofill` jetterait la règle entière, `:-webkit-autofill`
+   compris. `:autofill` est la forme standard, l'autre celle de Chrome et Safari.
+   Le compilateur CSS les fusionne d'ailleurs à la sortie et ne garde que la
+   forme standard, que tous les navigateurs actuels comprennent ; les deux
+   restent écrites ici parce que c'est la source qui doit rester juste.
+
+   ⚠️ LES IMAGES-CLÉS NE PEUVENT PAS ÊTRE VIDES, et c'est le piège de toute cette
+   mécanique — il coûte une heure et ne se voit nulle part. Écrites `from {}`,
+   elles sont SUPPRIMÉES du CSS de production par le minificateur, qui a raison :
+   une animation qui n'anime rien ne sert à rien. Sauf que l'animation, elle,
+   reste déclarée sur le champ — et un nom d'animation qui ne correspond à
+   aucune image-clé ne démarre pas, donc n'émet aucun `animationstart`. Tout
+   fonctionne en développement et rien ne fonctionne en production, sans une
+   ligne d'erreur nulle part.
+
+   D'où cette propriété personnalisée que PERSONNE ne lit : elle ne peut pas
+   être évaluée comme inutile, puisque le compilateur n'a aucun moyen de savoir
+   qui s'en sert. Elle ne peint rien, elle empêche seulement la disparition.
+   Vérifiable après un `pnpm build` — et surtout pas avec `grep -c`, qui compte
+   les LIGNES quand le CSS minifié n'en fait qu'une :
+   `grep -o "field-autofilled" .next/static/chunks/*.css | wc -l` doit trouver
+   DEUX occurrences, la déclaration et les images-clés. Une seule signifie que
+   les images-clés ont sauté et que plus rien n'écoute.
+
+   Ce couple animation/écouteur ne remplace PAS la lecture de `input.value` au
+   montage : celle-ci couvre le cas inverse, un remplissage survenu avant que le
+   composant n'existe, où l'événement est déjà passé.
+--------------------------------------------------------------------------- */
+@keyframes field-autofilled {
+  from {
+    --field-autofill-tick: 0;
+  }
+  to {
+    --field-autofill-tick: 1;
+  }
+}
+
+input:-webkit-autofill {
+  animation: field-autofilled 1ms;
+}
+
+input:autofill {
+  animation: field-autofilled 1ms;
+}
+
+[data-tone="ink"] input:-webkit-autofill,
+[data-tone="ink"] input:-webkit-autofill:hover,
+[data-tone="ink"] input:-webkit-autofill:focus,
+[data-tone="ink"] input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-paper);
+  caret-color: var(--color-paper);
 }

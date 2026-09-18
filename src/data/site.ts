@@ -18,4 +18,23 @@ export const site = {
     { days: "Nocturne le jeudi", hours: "10h00 — 21h30" },
     { days: "Lundi", hours: "Fermé" },
   ],
+
+  /**
+   * Année d'ouverture au public. C'est UNE DATE et non un nombre d'années :
+   * « 48 ans d'ouverture » écrit ici serait faux au 1er janvier suivant, sans
+   * que personne ne pense à venir le corriger. `lib/stats.ts` fait la
+   * soustraction — même principe que les chiffres du catalogue, qui sont
+   * dérivés de l'API plutôt que recopiés.
+   */
+  openedIn: 1978,
+
+  /**
+   * Fréquentation annuelle moyenne, d'où est tiré le cumul depuis l'ouverture
+   * affiché sur l'accueil. C'est donc une ESTIMATION assumée, pas un compteur :
+   * un vrai musée publierait le cumul réel, qu'aucune donnée du projet ne nous
+   * donne.
+   *
+   * Fictif, comme l'adresse ci-dessus.
+   */
+  annualVisitors: 180_000,
 } as const;

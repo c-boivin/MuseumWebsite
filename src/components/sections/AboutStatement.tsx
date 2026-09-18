@@ -36,8 +36,8 @@ interface AboutStatementProps {
    */
   lens?: boolean;
   /**
-   * `screen` cale le bloc sur exactement une hauteur d'écran, ce qui en fait
-   * aussi un point d'aimantation du scroll (voir `Section`).
+   * `screen` cale le bloc sur exactement une hauteur d'écran (voir `Section`) ;
+   * en `auto`, il est plus long qu'un écran et l'œuvre vient au milieu.
    */
   height?: "auto" | "screen";
 }
@@ -121,21 +121,19 @@ export function AboutStatement({
           }
         >
           <div className={isScreen ? "space-y-4" : "space-y-6"}>
-            {eyebrow && (
-              <p className="font-medium text-ink-mute text-xs uppercase tracking-[0.2em]">
-                {eyebrow}
-              </p>
-            )}
+            {eyebrow && <p className="eyebrow text-ink-mute">{eyebrow}</p>}
 
-            {/* `max-w-[52rem]` en hauteur libre : à la taille `display`, une
-                ligne pleine largeur ferait près de 90 signes et deviendrait
-                pénible à lire. Deux lignes courtes se lisent comme une phrase
-                affichée. */}
-            <Heading
-              as="h2"
-              size={isScreen ? "title" : "display"}
-              className={isScreen ? undefined : "max-w-[52rem]"}
-            >
+            {/* `title` DANS LES DEUX CAS, alors que la hauteur libre montait
+                jusqu'à `display`. C'était le deuxième <h2> de l'accueil à
+                2.75rem près : celui de `Selection`, au-dessus, s'écrit à
+                `title`, et deux blocs éditoriaux de même rang s'affichaient du
+                simple au double. Le `display` reste réservé à l'accroche plein
+                écran — un seul par page, sinon il n'accroche plus rien.
+
+                `max-w-[52rem]` tombe avec lui : il bornait la ligne parce qu'à
+                5rem une ligne pleine largeur atteignait 90 signes. À 2.75rem le
+                titre tient de lui-même dans une longueur lisible. */}
+            <Heading as="h2" size="title">
               {title}
             </Heading>
           </div>
@@ -174,18 +172,6 @@ export function AboutStatement({
              élément flex refuse par défaut de passer sous sa taille naturelle,
              et le bloc déborderait. */
           <figure
-            /* POINT D'ARRÊT DU SCROLL, et il est posé sur l'ŒUVRE, pas sur le
-               bloc. Les deux blocs précédents font une hauteur d'écran : les
-               aimanter par le haut les montre en entier. Celui-ci est plus long
-               qu'un écran, l'aimanter par le haut couperait tout ce qui suit le
-               titre. En marquant la figure, le scroll se repose avec la bande
-               au milieu de l'écran — on s'arrête sur l'œuvre, ce qui est le
-               seul endroit du bloc qui mérite qu'on s'arrête.
-
-               Inutile quand le bloc fait lui-même une hauteur d'écran : la
-               Section est alors déjà un point d'arrêt, et deux repères si
-               proches se disputeraient le scroll. */
-            data-snap-center={isScreen ? undefined : ""}
             className={
               isScreen ? "flex min-h-0 flex-1 flex-col gap-4" : undefined
             }
@@ -267,14 +253,12 @@ export function AboutStatement({
                 )}
               >
                 <dt className="text-ink-mute text-sm">{figure.label}</dt>
-                <dd
-                  className={cn(
-                    "font-display",
-                    isScreen ? "text-xl" : "text-title",
-                  )}
-                >
-                  {figure.value}
-                </dd>
+                {/* UNE SEULE TAILLE, quelle que soit la hauteur du bloc, et
+                    la même que celle de `MuseumFigures` sur la même page : un
+                    chiffre clé n'a qu'un corps sur ce site. Les deux séries
+                    s'affichaient auparavant à 2.75rem ici et 5rem là-bas, pour
+                    un balisage identique au caractère près. */}
+                <dd className="font-display text-figure">{figure.value}</dd>
               </div>
             ))}
           </dl>

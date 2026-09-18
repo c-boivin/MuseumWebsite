@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TransitionLink as Link } from "@/components/motion/TransitionLink";
 import { CircularText } from "@/components/ui/CircularText";
 import { Container } from "@/components/ui/Container";
 import { footerNavigation, mainNavigation } from "@/data/navigation";
@@ -28,7 +28,7 @@ export function Footer() {
     >
       <Container className="grid grid-cols-[1fr_1fr_1fr_auto] gap-12 py-16">
         <div className="space-y-3">
-          <p className="font-display text-xl tracking-tight">{site.name}</p>
+          <p className="font-display text-subhead">{site.name}</p>
           <address className="text-paper/70 text-sm not-italic leading-relaxed">
             {site.address.street}
             <br />

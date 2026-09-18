@@ -1,8 +1,8 @@
 "use client";
 
 import gsap from "gsap";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { TransitionLink as Link } from "@/components/motion/TransitionLink";
 import { Frame } from "@/components/ui/Frame";
 import { Heading } from "@/components/ui/Heading";
 import { Media } from "@/components/ui/Media";
@@ -112,14 +112,10 @@ export function Selection({
 
   return (
     <Section tone="ink" height="screen" spacing="compact">
-      <div className="flex min-h-0 flex-1 flex-col gap-10">
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-10">
         <div className="flex items-end justify-between gap-8">
           <div className="space-y-3">
-            {eyebrow && (
-              <p className="font-medium text-paper/50 text-xs uppercase tracking-[0.2em]">
-                {eyebrow}
-              </p>
-            )}
+            {eyebrow && <p className="eyebrow text-paper/50">{eyebrow}</p>}
             {/* Heading fixe `text-ink` dans ses propres classes : sur fond sombre
                 il faut le surcharger explicitement, l'héritage ne suffit pas. */}
             <Heading as="h2" className="text-paper">
@@ -140,8 +136,19 @@ export function Selection({
         {/* `min-h-0` autorise la ligne à RÉTRÉCIR sous la taille de son contenu :
             un élément flex refuse de passer sous sa taille intrinsèque par
             défaut, et la reproduction déborderait de l'écran au lieu de se
-            contenter de la place restante. */}
-        <div className="grid min-h-0 flex-1 grid-cols-[0.85fr_1fr] items-stretch gap-20">
+            contenter de la place restante.
+
+            `max-h-artwork` règle le défaut symétrique : la ligne s'étire sur
+            toute la hauteur restante alors que la LARGEUR de la colonne de
+            l'œuvre vient de la grille, donc de la largeur de l'écran. Sur une
+            fenêtre haute et étroite, la reproduction virait au portrait
+            démesuré pendant que l'index à côté rétrécissait — le rem du site
+            suivant la largeur. Le plafond en rem raccroche l'œuvre à cette même
+            échelle ; il est au-dessus de ce qu'un écran de référence lui laisse,
+            donc il ne se déclenche que sur les fenêtres anormalement hautes. Le
+            `justify-center` du parent recentre le bloc quand il mord, au lieu de
+            laisser un blanc sous l'œuvre. */}
+        <div className="grid min-h-0 max-h-artwork flex-1 grid-cols-[0.85fr_1fr] items-stretch gap-20">
           {/* COMBIEN DE LIGNES CET INDEX PEUT-IL TENIR : quatre, cinq au
               maximum. C'est LUI qui décide si le bloc rentre dans l'écran, et il
               faut comprendre pourquoi avant d'en ajouter une.
@@ -168,6 +175,7 @@ export function Selection({
                 >
                   <Link
                     href={`/collection/${artwork.slug}`}
+                    transitionLabel={artwork.title}
                     onMouseEnter={() => setActive(i)}
                     onFocus={() => setActive(i)}
                     aria-current={isActive ? "true" : undefined}
@@ -178,12 +186,12 @@ export function Selection({
                   >
                     {/* Le numéro d'accrochage : il donne un ordre de parcours,
                         comme les cartels numérotés d'une salle. */}
-                    <span className="font-display text-lead tabular-nums">
+                    <span className="font-display text-subhead tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
 
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-xl">
+                      <span className="block truncate font-display text-subhead">
                         {artwork.title}
                       </span>
                       <span className="mt-1 block truncate text-sm">
@@ -196,7 +204,7 @@ export function Selection({
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "flex-none text-lead transition-opacity duration-300",
+                        "flex-none text-subhead transition-opacity duration-300",
                         isActive ? "opacity-100" : "opacity-0",
                       )}
                     >
@@ -250,7 +258,7 @@ export function Selection({
               className="flex items-baseline justify-between gap-8 border-paper/15 border-t pt-4"
             >
               <span className="min-w-0">
-                <span className="block truncate font-display text-lead text-paper">
+                <span className="block truncate font-display text-subhead text-paper">
                   {current.title}
                 </span>
                 <span className="mt-1 block truncate text-paper/50 text-sm">

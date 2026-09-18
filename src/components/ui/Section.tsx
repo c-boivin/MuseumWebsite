@@ -12,12 +12,11 @@ interface SectionProps {
    * déduit) et centre son contenu verticalement. C'est un MINIMUM, pas un
    * plafond : un contenu trop grand fait grandir le bloc plutôt que de déborder.
    *
-   * Un bloc `screen` devient aussi un point d'aimantation du scroll (voir
-   * `[data-snap-section]` dans globals.css). Les deux notions ne sont pas
-   * séparées en deux props parce qu'elles n'ont aucun sens l'une sans l'autre :
-   * aimanter un bloc qui ne fait pas une hauteur d'écran arrêterait le scroll
-   * sur une position arbitraire, et un enchaînement de blocs plein écran sans
-   * aimantation est précisément le problème que l'aimantation vient régler.
+   * Un bloc `screen` était aussi un point d'aimantation du scroll : il posait un
+   * `data-snap-section` lu par globals.css. L'aimantation a été retirée du site
+   * en branchant Lenis, qui ne sait pas cohabiter avec `scroll-snap` (le
+   * pourquoi est dans `motion/SmoothScroll`). La prop ne règle donc plus qu'une
+   * hauteur.
    */
   height?: "auto" | "screen";
   /**
@@ -79,9 +78,6 @@ export function Section({
       /* Repris en CSS par `globals.css` pour inverser le contour de focus :
          un outline sombre sur fond sombre ne se voit pas. */
       data-tone={tone}
-      /* Lu par globals.css, dans les deux sens : il marque ce bloc comme point
-         d'arrêt, et sa seule présence dans la page y déclenche l'aimantation. */
-      data-snap-section={isScreen ? "" : undefined}
       className={cn(
         spacingClass,
         toneClass,

@@ -73,7 +73,7 @@ export function AboutChapters({ chapters, artworks }: AboutChaptersProps) {
               id={chapter.id}
               className="scroll-mt-24 space-y-4"
             >
-              <Heading as="h2" size="subtitle">
+              <Heading as="h2" size="heading">
                 {chapter.title}
               </Heading>
 

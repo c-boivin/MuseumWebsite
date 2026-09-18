@@ -66,4 +66,26 @@ export const featuredArtworks = {
     height: 2423,
     alt: "Reproduction de l'œuvre Sunflowers, par Vincent van Gogh",
   },
+  /* LES DEUX FORMATS PAYSAGE de la série, face à quatre portraits : Olympia et
+     la Naissance de Vénus sont nettement plus larges que hautes. C'est ce qui
+     rend leur cadrage plus délicat dans le Hero, qui recadre en `cover` — voir
+     `imagePosition` sur les pages Billetterie et Mon profil. */
+  olympia: {
+    src: "/artworks/olympia.jpg",
+    width: 1920,
+    height: 1308,
+    alt: "Reproduction de l'œuvre Olympia, par Édouard Manet",
+  },
+  /* L'accroche de « Mon profil », et la seule FRESQUE de la série — d'où ses
+     proportions, 2,2:1, sans équivalent parmi les toiles. C'est ce qui la rend
+     idéale pour la bande d'un Hero : cadrée en 21/9 elle ne perd que 6 % de sa
+     hauteur, là où un 16/9 lui couperait un cinquième de sa largeur, c'est-à-dire
+     Adam d'un côté et les anges de l'autre. Le geste des deux mains, lui, est
+     exactement au centre. */
+  "the-creation-of-adam": {
+    src: "/artworks/the-creation-of-adam.jpg",
+    width: 1920,
+    height: 871,
+    alt: "Reproduction de l'œuvre The Creation of Adam, par Michel-Ange",
+  },
 } satisfies Record<string, FeaturedImage>;

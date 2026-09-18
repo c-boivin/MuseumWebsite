@@ -12,15 +12,18 @@ complètement, parce que le contexte n'est plus le même.
 | Styles | SCSS | Tailwind v4 (tokens dans `globals.css`) |
 | Sélection | `document.querySelector` | `useRef` + `scope` |
 | Nettoyage | méthode `destroy()` appelée à la main | automatique via `useGSAP` |
-| Transitions de page | Barba.js | `<ViewTransition>` ou `template.tsx` — **Barba est inutilisable ici** |
+| Transitions de page | Barba.js | panneau GSAP dans le root layout — **Barba est inutilisable ici, `template.tsx` ne marche pas** |
 | Smooth scroll | Lenis (classe maison) | **Lenis** via `lenis/react` (voir §7) |
 | Unités | px | **rem uniquement** (voir §8) |
 
 Versions installées et vérifiées : **gsap 3.15.0**, **@gsap/react 2.1.2**, **lenis 1.3.26**.
 
-L'étape 7 de [roadmap.md](roadmap.md) est la cible : wrapper `<Reveal>`, animation d'arrivée,
-transition de page, preloader. Ce fichier est la théorie ; le code viendra à ce moment-là, dans
-`src/components/motion/`.
+L'étape 7 de [roadmap.md](roadmap.md) est la cible. Déjà branchés dans
+`src/components/motion/` : `TextReveal`, le preloader, la transition de page et **Lenis**
+(`SmoothScroll`). Reste le wrapper `<Reveal>` générique.
+
+⚠️ Brancher Lenis a coûté l'aimantation du scroll : l'arbitrage est rendu et expliqué au §7,
+à lire avant de remettre le moindre `scroll-snap` dans `globals.css`.
 
 ---
 
@@ -294,7 +297,7 @@ gsap.from(split.lines, {
 ligne est simplement décalée vers le bas et reste visible par-dessus le reste.
 
 **Le piège de ce projet : les polices.** SplitText mesure les lignes au moment où il s'exécute.
-Le site charge Geist et Instrument Serif via `next/font`. Si le découpage se fait avant que la
+Le site charge Outfit et Instrument Serif via `next/font`. Si le découpage se fait avant que la
 police soit appliquée, les retours à la ligne sont calculés sur la police de fallback, et le
 texte se retrouve mal coupé une fois la vraie police arrivée. D'où :
 
@@ -370,14 +373,26 @@ Même `name` des deux côtés, le navigateur anime la position et la taille entr
 guide complet dans `node_modules/next/dist/docs/01-app/02-guides/view-transitions.md` — son
 exemple est une galerie photo.
 
-**b. `template.tsx` + GSAP** — pour l'effet « volets qui balaient l'écran » du cours.
-Contrairement à `layout.tsx`, un `template.tsx` est remonté à chaque navigation, donc un
-`useGSAP` à l'intérieur se rejoue à chaque changement de page. C'est le point d'accroche de
-l'animation d'entrée. L'animation de **sortie**, elle, n'est pas gratuite : il faut retarder la
-navigation (un `<TransitionLink>` qui anime puis appelle `router.push`).
+**b. Un panneau dans le root layout + GSAP** — pour l'effet « volets qui balaient l'écran »
+du cours. C'est la solution retenue, et elle est **écrite** : `motion/PageTransition` et
+`motion/TransitionLink`, pilotés par le store `lib/store.ts`.
 
-Recommandation : `<ViewTransition>` pour le lien vignette → fiche, `template.tsx` pour une
-transition générique. Ne pas empiler les deux sur la même navigation.
+> ⚠️ **Et surtout PAS un `template.tsx`, contrairement à ce qu'on lit partout** — y compris
+> dans le cours. L'argument habituel est qu'un template, à la différence d'un layout, est
+> remonté à chaque navigation. **C'est faux en Next 16** : la doc de `template.js` précise
+> que chaque template reçoit une clé au niveau de SON PROPRE SEGMENT, et qu'une navigation
+> dans un segment plus profond ne le remonte pas. Un `app/template.tsx` porte donc la même
+> clé pour `/collection` et pour `/collection/starry-night` : aucune transition entre la
+> grille et la fiche, c'est-à-dire pile sur le parcours principal du site. Le déclencheur
+> est le `pathname`, qui lui est vrai à toutes les profondeurs.
+
+L'animation de **sortie** n'est de toute façon pas gratuite, quel que soit le point
+d'accroche : l'App Router n'a aucun crochet « avant de quitter la page ». Il faut reprendre
+la main sur le clic et retarder la navigation soi-même, en trois temps —
+(1) lire où le lien mène, (2) jouer l'animation, (3) `router.push` à la fin.
+
+Recommandation : `<ViewTransition>` pour le lien vignette → fiche si on l'ajoute un jour,
+le panneau pour la transition générique. Ne pas empiler les deux sur la même navigation.
 
 ---
 
@@ -456,6 +471,60 @@ useLenis(() => ScrollTrigger.update());
   défaut de Lenis (`(t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))`). Partir des défauts et ne
   toucher qu'à ce qui gêne vraiment.
 - **Le `destroy()` manuel.** `<ReactLenis>` s'en charge au démontage.
+
+### ⚠️ Lenis a coûté l'aimantation du scroll — arbitrage rendu
+
+Le README de Lenis 1.3.26 est explicite : « no support for CSS scroll-snap, you must use
+`lenis/snap` ». Or le site reposait sur `scroll-snap-type: y proximity` et ses deux repères
+`[data-snap-section]` / `[data-snap-center]` — cinq blocs plein écran sur l'accueil, À
+propos et la fiche œuvre. Brancher `<ReactLenis>` tel quel les désactive **en silence** :
+aucune erreur, aucun avertissement, le site perd simplement ses points de repos.
+
+**Décision : on garde le défilement amorti, on renonce à l'aimantation.** Le raisonnement,
+pour qu'il puisse être contesté : le défilement amorti se ressent sur CHAQUE geste de
+molette, l'aimantation ne se jouait qu'aux frontières de blocs, et la reconstruire avec
+`lenis/snap` voulait dire réenregistrer les points d'arrêt en JavaScript à chaque changement
+de route et réintroduire à la main le décalage du header collant — du code à maintenir pour
+retrouver ce que trois lignes de CSS donnaient. Le plugin reste dans le paquet
+(`node_modules/lenis/dist/lenis-snap.mjs`) si le rythme manque vraiment.
+
+Ce qui a été fait au même moment, et qu'il ne faut pas défaire :
+
+- les règles `scroll-snap-*` sont **supprimées** de `globals.css`, avec un commentaire à
+  leur place. Les laisser aurait entretenu l'illusion qu'elles font quelque chose ;
+- `data-snap-section` (`ui/Section`) et `data-snap-center` (`sections/AboutStatement`) sont
+  retirés du JSX ;
+- le `scroll-behavior: smooth` de `<html>` est retiré — Lenis le remplace — et avec lui le
+  `data-scroll-behavior="smooth"` du root layout, qui n'existait que pour le neutraliser le
+  temps d'une navigation ;
+- `scroll-padding-top`, lui, **reste** : le `scrollTo` de Lenis le lit (vérifié dans
+  `lenis.mjs`), les ancres se calent donc toujours sous le header.
+
+**Statut : branché.** `motion/SmoothScroll`, monté dans le root layout autour du Header, du
+`<main>` et du Footer.
+
+### L'ancre et le routeur se disputaient le même clic
+
+Le piège d'intégration, qui ne se voit dans aucune documentation : sur une ancre de la page
+courante (`#tarifs`, ou l'icône panier une fois sur `/billetterie`), **deux** acteurs
+répondent au clic. Lenis anime la descente, pendant que Next traite le changement d'ancre
+comme une navigation et appelle `scrollIntoView()` sur la cible — un saut sec. Résultat : la
+page saute en bas, remonte d'un coup là où Lenis en est de son animation, puis redescend.
+
+La parade est dans `motion/TransitionLink` : `scroll={false}` sur les seules ancres de la
+page courante. L'URL reçoit bien son `#`, l'historique aussi ; seul le saut du routeur est
+retiré. Les ancres vers une AUTRE page (l'icône panier depuis l'accueil) gardent le
+comportement de Next, puisque Lenis, lui, ne les traite pas.
+
+### Deux options de moins dans la documentation officielle
+
+- `allowNestedScroll: true` — les zones à ascenseur propre (colonne de filtres de la
+  collection, liste du panier, cartel de la fiche œuvre) redeviennent scrollables à la
+  molette, sans avoir à poser un `data-lenis-prevent` sur chacune.
+- `smoothWheel: false` quand `prefers-reduced-motion` est actif. L'option
+  `respectReducedMotion` de Lenis ne suffit PAS : dans la version 1.3.26, elle n'est lue que
+  par `scrollTo()` (un seul `if` dans `lenis.mjs`), donc l'amortissement de la molette reste
+  actif. C'est pourtant la seule animation du site qui touche à chaque geste.
 
 ### Deux points de vigilance propres à ce site
 

@@ -202,8 +202,19 @@ export function GlassLens({
   }
 
   return (
+    /* `data-cursor-hidden` : le point noir de `motion/Cursor` s'efface tant
+       qu'on est sur la loupe. Elle EST déjà un curseur — un disque qui suit la
+       souris, avec son anneau de verre — et le point venait se poser en plein
+       milieu de la lentille, là où l'on regarde justement le détail agrandi.
+       Deux curseurs superposés, dont un qui masque le sujet de l'autre.
+
+       L'attribut est posé ICI et non sur les appelants : c'est la loupe qui sait
+       qu'elle dessine son propre curseur, et tout usage futur en hérite sans
+       qu'on ait à y penser. Le curseur du système, lui, reste masqué — c'est
+       bien la loupe qui doit tenir ce rôle, pas la flèche. */
     <div
       ref={rootRef}
+      data-cursor-hidden
       className={cn("relative overflow-hidden", className)}
       onPointerEnter={handleEnter}
       onPointerMove={handleMove}
