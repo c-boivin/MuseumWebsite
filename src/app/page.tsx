@@ -1,5 +1,6 @@
 import { AboutStatement } from "@/components/sections/AboutStatement";
 import { Hero } from "@/components/sections/Hero";
+import { MuseumFigures } from "@/components/sections/MuseumFigures";
 import { Selection } from "@/components/sections/Selection";
 import { featuredArtworks } from "@/data/featured-artworks";
 import { site } from "@/data/site";
@@ -49,11 +50,13 @@ const SELECTION_DEFAULT = 2;
  * une page doit écrire ses propres classes de mise en page, c'est qu'il manque
  * un composant.
  *
- * SON RYTHME est délibérément inégal : deux blocs d'une hauteur d'écran, clair
- * puis sombre, puis un troisième en hauteur libre qui se termine avant le bas de
- * l'écran. Trois blocs plein écran identiques donnaient trois arrêts
- * interchangeables — on descendait sans jamais savoir où on en était, et rien
- * n'annonçait la fin de la page.
+ * SON RYTHME est délibérément inégal : les hauteurs alternent — un écran plein
+ * (Hero), un bloc court, un écran plein et sombre (la sélection), puis un
+ * dernier bloc en hauteur libre qui se termine avant le bas de l'écran. Quatre
+ * blocs plein écran identiques donneraient quatre arrêts interchangeables — on
+ * descendrait sans jamais savoir où on en est. Ici chaque bloc court sert de
+ * respiration entre deux temps forts, et le dernier, qui ne remplit pas
+ * l'écran, annonce la fin de la page.
  *
  * DEUX APPELS API, et chacun a sa raison :
  * - la sélection demande nommément six œuvres, pour ne pas télécharger un
@@ -84,6 +87,23 @@ export default async function HomePage() {
         image={featuredArtworks["the-kiss"]}
         height="screen"
       />
+
+      {/* Le seul chemin de l'accueil vers la billetterie. Les autres blocs
+          mènent tous à la collection ou au musée lui-même : sans celui-ci, la
+          page où le visiteur AGIT n'était atteignable que par la navigation du
+          header.
+
+          IL EST PLACÉ EN DEUXIÈME, juste après le Hero : le bouton d'accès à la
+          billetterie est à un écran de l'arrivée, sans avoir à traverser la
+          page. Sa hauteur libre, courte, entre deux blocs plein écran, en fait
+          une respiration plutôt qu'une étape du parcours — et ses chiffres
+          prennent le relais du titre sans lui disputer l'écran.
+
+          IL NE PREND AUCUNE PROP : ses trois chiffres se dérivent tout seuls de
+          `data/site.ts` et de la grille tarifaire, pas du catalogue. C'est ce
+          qui le distingue du bloc éditorial plus bas, dont les chiffres viennent
+          de l'API — deux séries, deux sources, aucun doublon. */}
+      <MuseumFigures />
 
       <Selection
         eyebrow="Sélection"

@@ -10,6 +10,15 @@ export interface CheckboxOption {
   label: string;
   /** Couleur CSS de la pastille, en mode `swatches`. Ignoré en mode liste. */
   swatch?: string;
+  /**
+   * Précision affichée sous le libellé, en mode liste uniquement.
+   *
+   * Ajouté pour les options de la billetterie, qui doivent dire ce qu'on achète
+   * (« Commentaire de 40 œuvres ») en plus de son nom. Optionnel : les filtres
+   * de la collection, dont le libellé se suffit à lui-même, n'y touchent pas et
+   * gardent exactement le rendu d'avant.
+   */
+  description?: string;
 }
 
 interface CheckboxGroupProps {
@@ -52,9 +61,7 @@ export function CheckboxGroup({
 }: CheckboxGroupProps) {
   return (
     <fieldset className={cn("space-y-3", className)}>
-      <legend className="font-medium text-ink-mute text-xs uppercase tracking-[0.2em]">
-        {legend}
-      </legend>
+      <legend className="eyebrow text-ink-mute">{legend}</legend>
 
       <div
         className={cn(
@@ -118,15 +125,31 @@ export function CheckboxGroup({
           ) : (
             <label
               key={option.value}
-              className="flex cursor-pointer items-center gap-3 text-ink-soft text-sm transition-colors hover:text-ink"
+              className={cn(
+                "flex cursor-pointer gap-3 text-ink-soft text-sm transition-colors hover:text-ink",
+                /* Aligné en haut dès qu'il y a deux lignes : centrer la case sur
+                   un bloc de deux lignes la ferait flotter au milieu du texte,
+                   au lieu de pointer la ligne qu'elle coche. */
+                option.description ? "items-start" : "items-center",
+              )}
             >
               <input
                 type="checkbox"
                 checked={selected.includes(option.value)}
                 onChange={() => onToggle(option.value)}
-                className="size-4 shrink-0 accent-ink"
+                className={cn(
+                  "size-4 shrink-0 accent-ink",
+                  option.description && "mt-0.5",
+                )}
               />
-              <span>{option.label}</span>
+              <span>
+                {option.label}
+                {option.description && (
+                  <span className="mt-1 block text-ink-mute">
+                    {option.description}
+                  </span>
+                )}
+              </span>
             </label>
           ),
         )}
