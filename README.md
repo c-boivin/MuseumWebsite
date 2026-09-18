@@ -1,12 +1,13 @@
-# museePhoto
+# MuseumWebsite — Musée des Mouvements
 
 Site d'un musée de peinture, construit avec Next.js sur l'API
 [`api-museum.vercel.app`](https://api-museum.vercel.app) fournie en cours : 39 œuvres
 majeures, de la Renaissance italienne au surréalisme.
 
-> Le dépôt s'appelle encore `museePhoto` : le projet visait d'abord un musée de la
-> photographie sur l'API du Metropolitan Museum, avant de basculer sur l'API du cours —
-> qui ne contient aucune photographie.
+> Le projet visait d'abord un musée de la photographie sur l'API du Metropolitan
+> Museum, avant de basculer sur l'API du cours — qui ne contient aucune photographie.
+> C'est de là que vient le vocabulaire photo qu'on peut encore croiser dans
+> [docs/](docs/) : ces passages racontent le basculement, ils ne le contredisent pas.
 
 Projet individuel noté — M2 DEV, ECV. Le sujet complet est dans [docs/brief.md](docs/brief.md).
 
