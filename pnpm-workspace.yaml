@@ -1,0 +1,19 @@
+# Réglages pnpm du projet. Depuis pnpm 10, ils vivent ici et non dans
+# package.json — ce fichier sert de configuration même pour un dépôt à un seul
+# paquet, sans `packages:`. Il a été créé par pnpm lui-même à l'installation de
+# `drizzle-kit`, qui pose la question ci-dessous.
+
+# SCRIPT D'INSTALLATION REFUSÉ, DÉLIBÉRÉMENT.
+#
+# `drizzle-kit` embarque esbuild, dont le script de postinstallation relie le
+# binaire de la plateforme. Vérifié sur cette machine : drizzle-kit fonctionne
+# sans lui — `drizzle-kit --version` répond, `db:push` aussi. On refuse donc le
+# script au lieu de l'autoriser, ce qui garde la posture du `ignore-scripts`
+# global de la machine.
+#
+# La ligne est OBLIGATOIRE, dans un sens ou dans l'autre : tant que la question
+# reste sans réponse, pnpm sort en erreur (ERR_PNPM_IGNORED_BUILDS) à chaque
+# commande — y compris `pnpm dev` et `pnpm build`, qui n'ont rien à voir.
+# La passer à `true` si un jour drizzle-kit se plaint de son binaire esbuild.
+allowBuilds:
+  esbuild: false

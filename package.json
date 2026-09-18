@@ -1,5 +1,5 @@
 {
-  "name": "musee-photo",
+  "name": "museum-website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,17 +7,24 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "db:auth": "pnpm dlx @better-auth/cli@latest generate --output ./src/db/auth-schema.ts --yes",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@neondatabase/serverless": "^1.1.0",
+    "better-auth": "^1.7.5",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "gsap": "^3.15.0",
     "lenis": "^1.3.26",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.2",
@@ -26,6 +33,8 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4",
     "typescript": "^7.0.2"
   },
