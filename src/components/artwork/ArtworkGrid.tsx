@@ -6,6 +6,15 @@ interface ArtworkGridProps {
   artworks: ArtworkPreview[];
   /** Nombre de cartes chargées en priorité : celles visibles sans scroller. */
   priorityCount?: number;
+  /**
+   * Préfixe des liens vers les fiches d'œuvres.
+   *
+   * `/collection` dans le catalogue du musée, `/compte/collection` dans celle du
+   * visiteur : la fiche existe sous les deux parcours et le lien doit rester dans
+   * celui qu'on suit, sans quoi le retour ramène dans le mauvais. Voir
+   * `app/compte/collection/[slug]/page.tsx`.
+   */
+  basePath?: string;
   className?: string;
 }
 
@@ -20,6 +29,7 @@ interface ArtworkGridProps {
 export function ArtworkGrid({
   artworks,
   priorityCount = 3,
+  basePath,
   className,
 }: ArtworkGridProps) {
   return (
@@ -29,6 +39,7 @@ export function ArtworkGrid({
           key={artwork.slug}
           artwork={artwork}
           priority={index < priorityCount}
+          basePath={basePath}
         />
       ))}
     </div>

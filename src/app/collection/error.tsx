@@ -28,9 +28,7 @@ export default function CollectionError({
   return (
     <Section spacing="large">
       <div className="max-w-reading space-y-6">
-        <p className="font-medium text-ink-mute text-xs uppercase tracking-[0.2em]">
-          Salle temporairement fermée
-        </p>
+        <p className="eyebrow text-ink-mute">Salle temporairement fermée</p>
         <Heading as="h1" size="title">
           Les œuvres n&apos;ont pas pu être chargées
         </Heading>

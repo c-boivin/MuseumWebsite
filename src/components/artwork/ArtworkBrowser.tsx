@@ -20,6 +20,37 @@ import type { ArtworkPreview } from "@/types/artwork";
 interface ArtworkBrowserProps {
   /** Catalogue complet. Le filtrage se fait ici, sans rappeler l'API. */
   artworks: ArtworkPreview[];
+  /**
+   * Phrase du compteur quand aucun filtre ne retire d'œuvre : « 39 œuvres
+   * exposées » dans la collection, « 12 œuvres dans vos favoris » dans l'espace
+   * compte.
+   *
+   * UNE CHAÎNE DÉJÀ COMPOSÉE, ET NON UNE FONCTION `(n) => string`. Ce composant
+   * est appelé depuis des Server Components : une fonction ne franchit pas la
+   * frontière serveur/client, le rendu échouerait — et il échouerait chez le
+   * prochain appelant, pas ici. Le nombre est de toute façon connu de l'appelant,
+   * puisque c'est lui qui fournit la liste.
+   */
+  totalLabel?: string;
+  /**
+   * Ce qu'on affiche quand la liste reçue est vide AVANT tout filtrage — un
+   * espace favoris encore vide, par exemple.
+   *
+   * À ne pas confondre avec « aucune œuvre ne correspond à cette sélection »,
+   * plus bas : celui-là parle des filtres, celui-ci de la liste elle-même. Les
+   * confondre afficherait une colonne de filtres à quelqu'un qui n'a rien à
+   * filtrer, et lui suggérerait que c'est sa sélection qui ne va pas.
+   */
+  emptyState?: React.ReactNode;
+  /**
+   * Préfixe des liens vers les fiches d'œuvres.
+   *
+   * `/collection` dans le catalogue du musée, `/compte/collection` dans celle du
+   * visiteur : la fiche existe sous les deux parcours et le lien doit rester dans
+   * celui qu'on suit, sans quoi le retour ramène dans le mauvais. Voir
+   * `app/compte/collection/[slug]/page.tsx`.
+   */
+  basePath?: string;
 }
 
 /** Noms des paramètres d'URL. Centralisés : ils apparaissent à plusieurs endroits. */
@@ -70,7 +101,12 @@ function readList(params: URLSearchParams, key: string): string[] {
  * l'hydratation. C'est le prix du statique ; l'alternative serait de lire
  * `searchParams` côté serveur et de perdre le SSG.
  */
-export function ArtworkBrowser({ artworks }: ArtworkBrowserProps) {
+export function ArtworkBrowser({
+  artworks,
+  totalLabel,
+  emptyState,
+  basePath,
+}: ArtworkBrowserProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -135,6 +171,12 @@ export function ArtworkBrowser({ artworks }: ArtworkBrowserProps) {
     }));
   }, [artworks]);
 
+  /* APRÈS TOUS LES HOOKS, jamais avant : `useMemo` et consorts doivent être
+     appelés dans le même ordre à chaque rendu. Une liste qui passe de vide à
+     remplie — les favoris qui arrivent — changerait sinon le nombre de hooks
+     entre deux rendus, et React s'arrête là-dessus. */
+  if (artworks.length === 0 && emptyState) return <>{emptyState}</>;
+
   return (
     <div className="mt-16 grid grid-cols-[14rem_1fr] items-start gap-12">
       {/* `sticky` : la colonne de filtres reste accessible pendant qu'on fait
@@ -155,7 +197,7 @@ export function ArtworkBrowser({ artworks }: ArtworkBrowserProps) {
           z-index, il perdait, puisque la grille vient après lui dans le DOM. 40
           reste sous le header collant (`z-50`). */}
       <aside className="sticky top-[calc(var(--spacing-header)+1.5rem)] z-40 space-y-10">
-        <ArtworkSearch artworks={artworks} />
+        <ArtworkSearch artworks={artworks} basePath={basePath} />
 
         {/* Le défilement est sur les FILTRES, pas sur toute la colonne : le
             panneau de suggestions est en position absolue, et un ancêtre en
@@ -187,12 +229,16 @@ export function ArtworkBrowser({ artworks }: ArtworkBrowserProps) {
             case sans jamais savoir ce que ça a produit. */}
         <p aria-live="polite" className="text-ink-mute text-sm">
           {filtered.length === artworks.length
-            ? `${artworks.length} œuvres exposées`
+            ? (totalLabel ?? `${artworks.length} œuvres exposées`)
             : `${filtered.length} œuvre${filtered.length > 1 ? "s" : ""} sur ${artworks.length}`}
         </p>
 
         {filtered.length > 0 ? (
-          <ArtworkGrid artworks={filtered} className="mt-8" />
+          <ArtworkGrid
+            artworks={filtered}
+            basePath={basePath}
+            className="mt-8"
+          />
         ) : (
           <div className="mt-8 border-line border-t pt-8">
             <p className="text-ink-soft">

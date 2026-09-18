@@ -38,13 +38,27 @@ export default function CollectionPage() {
        leur bloc d'accroche. Ici, ce qui suit le titre EST la page : les 39
        œuvres. Un en-tête plein écran les repousserait intégralement sous la
        ligne de flottaison, et une page de catalogue qui n'affiche aucune œuvre à
-       l'arrivée a raté son seul travail. */
+       l'arrivée a raté son seul travail.
+
+       CETTE PAGE EST LA SEULE À COMPOSER SON EN-TÊTE À LA MAIN — les quatre
+       autres passent par <Hero />, qui pose lui-même le titre. C'est pour ça que
+       le corps du titre avait dérivé ici, et nulle part ailleurs : une taille
+       recopiée est une taille qui se désynchronise. Voir le <Heading> ci-dessous
+       avant d'y toucher. */
     <Section spacing="compact">
       <div className="max-w-reading space-y-6">
-        <p className="font-medium text-ink-mute text-xs uppercase tracking-[0.2em]">
-          Collection permanente
-        </p>
+        <p className="eyebrow text-ink-mute">Collection permanente</p>
         <TextReveal>
+          {/* `display`, la taille des titres de <Hero /> — et non `title`, qui
+              était ici un reste. La hauteur du bloc n'a rien à voir avec le
+              corps du titre : plein écran ou pas, c'est L'ACCROCHE de la page,
+              au même rang que « Billetterie » ou que l'accroche de l'accueil.
+              À 2.75rem, /collection arrivait avec un titre deux fois plus petit
+              que toutes les autres pages du site.
+
+              Ce n'est pas la règle « une seule taille par balise » : le <h1> de
+              la FICHE œuvre reste en `title`, parce qu'il titre un cartel à côté
+              d'une reproduction, pas une page. La taille suit le bloc. */}
           <Heading as="h1" size="display">
             Toutes les œuvres
           </Heading>

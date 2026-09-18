@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { FavoriteButton } from "@/components/artwork/FavoriteButton";
+import { TransitionLink as Link } from "@/components/motion/TransitionLink";
 import { Media } from "@/components/ui/Media";
 import type { ArtworkPreview } from "@/types/artwork";
 
@@ -6,6 +7,15 @@ interface ArtworkCardProps {
   artwork: ArtworkPreview;
   /** Le premier visuel visible à l'écran est chargé en priorité (performance). */
   priority?: boolean;
+  /**
+   * Préfixe des liens vers les fiches d'œuvres.
+   *
+   * `/collection` dans le catalogue du musée, `/compte/collection` dans celle du
+   * visiteur : la fiche existe sous les deux parcours et le lien doit rester dans
+   * celui qu'on suit, sans quoi le retour ramène dans le mauvais. Voir
+   * `app/compte/collection/[slug]/page.tsx`.
+   */
+  basePath?: string;
 }
 
 /**
@@ -20,10 +30,28 @@ interface ArtworkCardProps {
  * se lit, se partage et se référence mieux que `/collection/2`. L'API impose
  * d'ailleurs ce choix — `GET /objects/2` répond 404, seul le slug est accepté.
  */
-export function ArtworkCard({ artwork, priority = false }: ArtworkCardProps) {
+export function ArtworkCard({
+  artwork,
+  priority = false,
+  basePath = "/collection",
+}: ArtworkCardProps) {
   return (
-    <article>
-      <Link href={`/collection/${artwork.slug}`} className="group block">
+    /* `group` sur l'ARTICLE et non sur le lien, depuis que le signet des favoris
+       est venu s'y poser : il est frère du lien, un `group` porté par le lien ne
+       l'atteindrait donc pas. Le survol de la carte entière commande désormais
+       les deux effets, ce qui est aussi plus juste — la carte est une seule
+       cible, pas une image et un texte séparés.
+
+       `relative` sert d'ancrage au signet. */
+    <article className="group relative">
+      {/* `transitionLabel` : le panneau de transition annonce le titre du
+          tableau, pas « Œuvre ». L'URL ne connaît que le slug, la carte connaît
+          l'œuvre — c'est donc à elle de le dire. */}
+      <Link
+        href={`${basePath}/${artwork.slug}`}
+        transitionLabel={artwork.title}
+        className="block"
+      >
         {/* `cover` dans un cadre carré : toutes les œuvres occupent exactement
             la même surface, quelle que soit leur orientation.
 
@@ -68,6 +96,23 @@ export function ArtworkCard({ artwork, priority = false }: ArtworkCardProps) {
           )}
         </div>
       </Link>
+
+      {/* HORS DU LIEN, ET C'EST OBLIGATOIRE. Un <button> imbriqué dans un <a>
+          est du HTML invalide : le navigateur défait l'imbrication en réparant
+          le document, et l'on se retrouve avec un bouton posé n'importe où dans
+          l'arbre. Le signet est donc un FRÈRE du lien, ramené visuellement
+          par-dessus la reproduction — c'est ce que paie le `relative` de
+          l'article.
+
+          `z-10` : sans lui, l'ordre du DOM suffirait ici, mais la moindre
+          couche d'empilement ajoutée au lien (une transition, un `transform`)
+          ferait repasser le signet dessous, et le clic atterrirait sur le lien.
+          C'est le genre de régression qui ne se voit qu'au clic. */}
+      <FavoriteButton
+        slug={artwork.slug}
+        title={artwork.title}
+        className="absolute top-3 right-3 z-10"
+      />
     </article>
   );
 }

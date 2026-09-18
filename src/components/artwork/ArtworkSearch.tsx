@@ -2,8 +2,8 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import Link from "next/link";
 import { useId, useRef, useState } from "react";
+import { TransitionLink as Link } from "@/components/motion/TransitionLink";
 import { Highlight } from "@/components/ui/Highlight";
 import { Media } from "@/components/ui/Media";
 import { MAX_RESULTS, MIN_QUERY_LENGTH, searchArtworks } from "@/lib/search";
@@ -14,6 +14,15 @@ gsap.registerPlugin(useGSAP);
 interface ArtworkSearchProps {
   /** Catalogue complet : la recherche se fait sur place, sans rappeler l'API. */
   artworks: ArtworkPreview[];
+  /**
+   * Préfixe des liens vers les fiches d'œuvres.
+   *
+   * `/collection` dans le catalogue du musée, `/compte/collection` dans celle du
+   * visiteur : la fiche existe sous les deux parcours et le lien doit rester dans
+   * celui qu'on suit, sans quoi le retour ramène dans le mauvais. Voir
+   * `app/compte/collection/[slug]/page.tsx`.
+   */
+  basePath?: string;
 }
 
 /**
@@ -40,7 +49,10 @@ interface ArtworkSearchProps {
  * instantanément et on regarderait un panneau vide s'effacer pendant trois
  * dixièmes de seconde.
  */
-export function ArtworkSearch({ artworks }: ArtworkSearchProps) {
+export function ArtworkSearch({
+  artworks,
+  basePath = "/collection",
+}: ArtworkSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ArtworkPreview[]>([]);
   const [isSearchResultsVisible, setIsSearchResultsVisible] = useState(false);
@@ -234,7 +246,8 @@ export function ArtworkSearch({ artworks }: ArtworkSearchProps) {
                   className="border-line border-b last:border-b-0"
                 >
                   <Link
-                    href={`/collection/${artwork.slug}`}
+                    href={`${basePath}/${artwork.slug}`}
+                    transitionLabel={artwork.title}
                     className="flex items-center gap-4 p-3 transition-colors hover:bg-paper"
                   >
                     <Media
