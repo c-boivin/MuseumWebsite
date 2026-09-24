@@ -10,14 +10,12 @@ import {
 /**
  * Calcul du panier de la billetterie.
  *
- * FONCTION PURE, volontairement hors du store : le store ne retient que ce que
- * l'utilisateur a CHOISI (des quantités, des cases cochées), et tout le reste —
- * lignes, remise, total — s'en déduit à chaque rendu. Rien de calculé n'est
- * stocké, donc rien ne peut se désynchroniser du choix réel, et la règle métier
- * se relit dans un seul fichier sans ouvrir un composant.
+ * Fonction pure, volontairement hors du store : le store ne retient que ce que
+ * l'utilisateur a choisi, tout le reste s'en déduit à chaque rendu. Rien de
+ * calculé n'est stocké, donc rien ne peut se désynchroniser du choix réel.
  *
- * C'est la même logique que `lib/facets.ts` pour les filtres de la collection :
- * l'état minimal d'un côté, la dérivation de l'autre.
+ * Même logique que `lib/facets.ts` : l'état minimal d'un côté, la dérivation de
+ * l'autre.
  */
 
 /** Une ligne du récapitulatif : un tarif ou une option, avec sa quantité. */
@@ -25,7 +23,7 @@ export interface CartLine {
   id: string;
   label: string;
   quantity: number;
-  /** Prix unitaire réellement facturé — 15 € quand la remise groupe s'applique. */
+  /** Prix unitaire réellement facturé — 15 € sous remise groupe. */
   unitPrice: number;
   /** Prix affiché à la grille tarifaire. Diffère de `unitPrice` sous remise. */
   basePrice: number;
@@ -36,9 +34,8 @@ export interface Cart {
   ticketLines: CartLine[];
   optionLines: CartLine[];
   /**
-   * Nombre de PERSONNES, entrées gratuites comprises. C'est ce compte qui
-   * déclenche le tarif groupe et qui multiplie les options : les deux se
-   * raisonnent en visiteurs, pas en euros.
+   * Nombre de personnes, entrées gratuites comprises : c'est ce compte qui
+   * déclenche le tarif groupe et qui multiplie les options.
    */
   visitors: number;
   isGroup: boolean;
@@ -51,12 +48,9 @@ export interface Cart {
 export type TicketQuantities = Record<string, number>;
 
 /**
- * Prix unitaire d'une catégorie, tarif groupe pris en compte.
- *
  * `Math.min` et non un remplacement sec par 15 € : le tarif groupe est une
- * REMISE, il ne doit jamais faire monter un prix. Sans ce garde-fou, une entrée
- * −12 ans à 12 € passerait à 15 € en rejoignant un groupe, et une entrée −5 ans
- * gratuite deviendrait payante — le visiteur serait puni d'être venu à plusieurs.
+ * remise, il ne doit jamais faire monter un prix. Sans ce garde-fou, une entrée
+ * −5 ans gratuite deviendrait payante en rejoignant un groupe.
  */
 function unitPriceOf(category: TicketCategory, isGroup: boolean): number {
   return isGroup ? Math.min(category.price, GROUP_PRICE) : category.price;
@@ -93,11 +87,9 @@ export function computeCart(
     });
   }
 
-  /* Une option cochée est facturée pour TOUTES les personnes du panier : c'est
-     la lecture littérale du « 2 € / personne » de la grille tarifaire. Elle
-     n'apparaît donc pas tant qu'aucun billet n'est choisi — une option seule ne
-     veut rien dire, et une ligne à 0 € dans le récapitulatif ne fait que
-     brouiller le total. */
+  /* Une option cochée est facturée pour toutes les personnes du panier : lecture
+     littérale du « 2 € / personne » de la grille. Elle n'apparaît donc pas tant
+     qu'aucun billet n'est choisi. */
   const optionLines: CartLine[] = ticketOptions
     .filter((option: TicketOption) => selectedOptions.includes(option.id))
     .map((option) => ({
@@ -119,14 +111,10 @@ export function computeCart(
 }
 
 /**
- * Formatage des montants.
- *
- * Écrit à la main plutôt qu'avec `Intl.NumberFormat` : tous les prix du musée
- * sont des entiers d'euros, et surtout l'implémentation d'Intl diffère entre
- * Node et le navigateur sur l'espace qui précède le symbole (fine insécable ou
- * insécable selon les versions). Le serveur et le client rendraient alors deux
- * chaînes différentes pour le même prix, et React signalerait une erreur
- * d'hydratation sur chaque ligne de la grille.
+ * Écrit à la main plutôt qu'avec `Intl.NumberFormat` : tous les prix sont des
+ * entiers d'euros, et Intl diffère entre Node et le navigateur sur l'espace qui
+ * précède le symbole. Les deux rendraient des chaînes différentes pour le même
+ * prix, donc une erreur d'hydratation sur chaque ligne.
  */
 export function formatPrice(value: number): string {
   return `${value} €`;

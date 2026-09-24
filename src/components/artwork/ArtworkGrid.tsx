@@ -7,12 +7,8 @@ interface ArtworkGridProps {
   /** Nombre de cartes chargées en priorité : celles visibles sans scroller. */
   priorityCount?: number;
   /**
-   * Préfixe des liens vers les fiches d'œuvres.
-   *
    * `/collection` dans le catalogue du musée, `/compte/collection` dans celle du
-   * visiteur : la fiche existe sous les deux parcours et le lien doit rester dans
-   * celui qu'on suit, sans quoi le retour ramène dans le mauvais. Voir
-   * `app/compte/collection/[slug]/page.tsx`.
+   * visiteur : le lien doit rester dans le parcours qu'on suit.
    */
   basePath?: string;
   className?: string;

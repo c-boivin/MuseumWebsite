@@ -1,24 +1,16 @@
 /**
  * Grille tarifaire du musée.
  *
- * ⚠️ LES MONTANTS SONT CEUX DU SUJET, repris au centime près de la grille de
- * `docs/brief.md`. Ils sont élevés pour un musée français — 24 € l'entrée
- * adulte, c'est au-dessus du Louvre (22 €) et très au-dessus d'Orsay (16 €) — et
- * la question a été posée puis tranchée : on ne les baisse pas. C'est une donnée
- * notée, pas un choix de direction artistique, et le correcteur peut comparer
- * ligne à ligne. La remarque a sa place dans le compte-rendu critique, pas ici.
+ * ⚠️ Les montants sont ceux du sujet, repris au centime près. Ils sont élevés
+ * pour un musée français — 24 € l'entrée adulte, au-dessus du Louvre — et la
+ * question a été tranchée : on ne les baisse pas, c'est une donnée notée.
  *
- * Si la décision changeait un jour : baisser une entrée SANS baisser
- * `GROUP_PRICE` viderait la remise groupe de son sens (à 16 € l'entrée, elle ne
- * vaudrait plus qu'1 € par personne), et c'est le seul calcul métier non trivial
- * de la billetterie.
+ * Si la décision changeait : baisser une entrée sans baisser `GROUP_PRICE`
+ * viderait la remise groupe de son sens, et c'est le seul calcul métier non
+ * trivial de la billetterie.
  *
- * Contenu statique, comme `data/about.ts` : la page décrit la mise en forme, ce
- * fichier porte les prix. Changer un tarif ne demande d'ouvrir aucun composant.
- *
- * Les prix sont des NOMBRES en euros, pas des chaînes déjà formatées. Le panier
- * doit pouvoir les additionner et leur appliquer la remise groupe ; le formatage
- * (« 24 € ») est fait à l'affichage par `formatPrice` dans `lib/cart.ts`.
+ * Les prix sont des nombres et non des chaînes formatées : le panier doit
+ * pouvoir les additionner. Le formatage est fait par `formatPrice`.
  */
 
 export interface TicketCategory {
@@ -32,8 +24,8 @@ export interface TicketCategory {
 }
 
 /**
- * Les sept entrées de la grille du sujet, dans l'ordre d'affichage : le plein
- * tarif d'abord, puis les tarifs réduits, puis la gratuité.
+ * Dans l'ordre d'affichage : le plein tarif, puis les tarifs réduits, puis la
+ * gratuité.
  */
 export const ticketCategories: TicketCategory[] = [
   {
@@ -84,15 +76,13 @@ export interface TicketOption {
   id: string;
   label: string;
   detail: string;
-  /** Prix PAR PERSONNE : l'option est facturée pour tout le monde ou personne. */
+  /** Prix par personne : l'option est facturée pour tout le monde ou personne. */
   price: number;
 }
 
 /**
- * Suppléments de visite. Ce sont des cases à cocher et non des quantités : le
- * sujet les facture « par personne », et une commande de six audioguides pour
- * deux billets n'aurait aucun sens. Cochée, l'option est donc multipliée par le
- * nombre d'entrées du panier — voir `computeCart`.
+ * Des cases à cocher et non des quantités : le sujet les facture « par
+ * personne », et six audioguides pour deux billets n'aurait aucun sens.
  */
 export const ticketOptions: TicketOption[] = [
   {
@@ -110,9 +100,9 @@ export const ticketOptions: TicketOption[] = [
 ];
 
 /**
- * Le plan du musée n'est pas une option : il est gratuit et remis à tout le
- * monde. Le mettre dans la liste ci-dessus créerait une case à cocher à 0 € —
- * une décision à prendre pour rien. Il est simplement mentionné sous les options.
+ * Le plan n'est pas une option : il est gratuit et remis à tout le monde. Dans
+ * la liste ci-dessus, il donnerait une case à cocher à 0 €, donc une décision à
+ * prendre pour rien.
  */
 export const includedExtra =
   "Le plan du musée est remis gratuitement à l'accueil.";

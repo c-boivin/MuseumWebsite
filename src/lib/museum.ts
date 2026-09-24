@@ -8,45 +8,30 @@ import type { MuseumListResponse, MuseumObject } from "@/types/museum-api";
 /**
  * Client de l'API Museum.
  *
- * SEUL fichier du projet qui connaît l'existence de cette API. Les pages et les
- * composants appellent `getArtworks()` / `getArtwork()` et reçoivent des objets
- * déjà normalisés : ils ignorent l'URL, la pagination et le format de réponse.
- * C'est ce qui permettrait d'en changer sans toucher une seule vue.
+ * Seul fichier du projet qui connaît cette API : les pages appellent
+ * `getArtworks()` / `getArtwork()` et reçoivent des objets déjà normalisés.
  */
 
 const API_URL = "https://api-museum.vercel.app";
 
 /**
- * Durée de fraîcheur du cache, en secondes.
- *
- * Depuis Next 15, `fetch` n'est PLUS mis en cache par défaut : sans cette option,
- * chaque visiteur déclencherait un appel réseau et la page ne pourrait jamais
- * être pré-rendue. Avec elle, la page est générée une fois puis resservie telle
- * quelle pendant une heure, et régénérée en arrière-plan ensuite (ISR).
- *
- * Une heure est un compromis assumé : le catalogue d'un musée ne change pas
- * toutes les minutes, et la note du projet valorise une stratégie de rendering
- * explicite plutôt que subie.
+ * Depuis Next 15, `fetch` n'est plus mis en cache par défaut : sans cette
+ * option, chaque visiteur déclencherait un appel et la page ne serait jamais
+ * pré-rendue. Une heure, le catalogue d'un musée ne bouge pas plus vite.
  */
 const REVALIDATE_SECONDS = 3600;
 
 interface ListParams {
-  /** Page demandée, 1 par défaut. */
   page?: number;
-  /** Nombre d'œuvres par page. Sans limite, l'API renvoie tout (39 œuvres). */
   limit?: number;
-  /** Recherche plein texte sur le titre et l'artiste. */
   search?: string;
-  /** Filtre sur l'artiste. Recherche PARTIELLE et insensible à la casse — voir
-   *  `getArtworksByArtist`, malgré ce qu'annonce la doc du cours. */
+  /** Recherche PARTIELLE et insensible à la casse, voir `getArtworksByArtist`. */
   artist?: string;
 }
 
 /**
- * Appelle l'API et renvoie la réponse déjà décodée.
- *
- * `notFound` n'est pas traité ici comme une erreur : c'est à l'appelant de
- * décider quoi en faire (afficher une 404, ou ignorer). D'où le `null`.
+ * `notFound` n'est pas une erreur ici : c'est à l'appelant de décider quoi en
+ * faire. D'où le `null`.
  */
 async function request<T>(path: string): Promise<T | null> {
   const response = await fetch(`${API_URL}${path}`, {
@@ -56,8 +41,7 @@ async function request<T>(path: string): Promise<T | null> {
   if (response.status === 404) return null;
 
   if (!response.ok) {
-    /* On laisse remonter : l'error.tsx du segment affichera un message propre
-       plutôt que de rendre une page à moitié vide. */
+    /* Laissé remonter : l'error.tsx du segment affichera un message propre. */
     throw new Error(
       `API Museum : ${response.status} ${response.statusText} sur ${path}`,
     );
@@ -73,12 +57,8 @@ function orNull(value: string | undefined): string | null {
 }
 
 /**
- * Construit le texte alternatif d'une reproduction.
- *
- * Il est généré plutôt que saisi parce que l'API n'en fournit aucun. Un `alt`
- * vide ferait échouer le critère d'accessibilité du projet ; un `alt` qui répète
- * seulement le titre n'apprend rien à un lecteur d'écran, d'où l'ajout de
- * l'artiste et de la nature de l'objet montré.
+ * L'API ne fournit aucun texte alternatif. Répéter seulement le titre
+ * n'apprendrait rien à un lecteur d'écran, d'où l'artiste et la nature de la vue.
  */
 function buildAlt(object: MuseumObject, index = 0): string {
   const artist = orNull(object.artist);
@@ -89,48 +69,38 @@ function buildAlt(object: MuseumObject, index = 0): string {
 }
 
 /**
- * Largeur demandée à Wikimedia selon l'endroit où l'image sera affichée.
+ * Largeur demandée à Wikimedia selon le contexte d'affichage.
  *
- * POURQUOI DEUX VALEURS plutôt qu'une seule bien large : `next/image` ne
- * redimensionne pas l'image chez Wikimedia, il la TÉLÉCHARGE puis la
- * redimensionne chez nous. Demander du 1920px pour des vignettes de grille,
- * c'est faire transiter 39 fichiers de ~1,1 Mo pour afficher des cartes de
- * 400 px — et se faire limiter par Wikimedia (**HTTP 429**), qui renvoie alors
- * des images vides sur toute la page.
- *
- * Les deux valeurs sont calées sur la maquette 1440 px, doublées pour les écrans
- * à forte densité, puis arrondies à la taille standard supérieure.
+ * Deux valeurs et non une seule bien large : demander du 1920 px pour des
+ * vignettes ferait transiter 39 fichiers de ~1,1 Mo et Wikimedia limite (429).
+ * Calées sur la maquette 1440 px, doublées pour les écrans à forte densité.
  */
 const THUMBNAIL_WIDTH = {
-  /** Carte de grille : ~400 px affichés, 800 px sur un écran ×2. */
   card: 960,
-  /** Reproduction principale d'une fiche : ~860 px affichés, 1720 px en ×2. */
   detail: 1920,
 } as const;
 
 /**
- * Emballe une URL distante dans le contrat attendu par <Media />.
+ * Emballe une URL distante dans le contrat de <Media />.
  *
  * Sans `width` ni `height` : on ne connaît pas les dimensions d'une image qu'on
- * n'a pas téléchargée. <Media /> le détecte et passe en mode `fill`.
+ * n'a pas téléchargée. <Media /> le détecte et passe en `fill`.
+ *
+ * `unoptimized` : l'URL désigne déjà une vignette à la bonne largeur servie par
+ * le CDN de Wikimedia. La repasser par l'optimiseur obligerait notre serveur à
+ * la télécharger — 39 téléchargements simultanés pour une grille, que Wikimedia
+ * refuse en 429. Voir `components/ui/Media.tsx`.
  */
 function toImageMedia(
   src: string,
   alt: string,
   wanted: number,
 ): ImageMedia | null {
-  /* L'override d'abord — il corrige une URL carrément fausse — puis la mise en
-     forme, qui s'applique aussi bien à l'URL d'origine qu'à sa correction. */
+  /* L'override d'abord — il corrige une URL fausse — puis la mise en forme. */
   const corrected = getWikimediaImageUrl(imageOverrides[src] ?? src, wanted);
 
-  /* Dernier filtre : une URL malformée ou hébergée sur un domaine non déclaré
-     ferait échouer next/image en 400. Autant le savoir maintenant et rendre le
-     cadre de remplacement, plutôt qu'une image cassée dans la page. */
-  /* `unoptimized` : l'URL désigne déjà une vignette à la largeur voulue, servie
-     par le CDN de Wikimedia. La repasser par l'optimiseur de Next obligerait
-     notre serveur à la télécharger — 39 téléchargements simultanés pour une
-     grille, ce que Wikimedia refuse en **429**. Voir le commentaire détaillé
-     dans `components/ui/Media.tsx`. */
+  /* Une URL malformée ou sur un domaine non déclaré ferait échouer next/image
+     en 400 : mieux vaut rendre le cadre de remplacement. */
   return isDisplayableImageUrl(corrected)
     ? { type: "image", src: corrected, alt, unoptimized: true }
     : null;
@@ -139,10 +109,8 @@ function toImageMedia(
 /**
  * API brute → aperçu affichable.
  *
- * Une œuvre sans reproduction exploitable n'est PAS écartée : elle reçoit
- * `media: null` et le site lui affiche un cadre de remplacement. Le catalogue
- * reflète ainsi toute la base, même incomplète — une œuvre ajoutée sans visuel
- * reste consultable, avec son cartel et sa notice.
+ * Une œuvre sans reproduction n'est pas écartée : elle reçoit `media: null` et
+ * un cadre de remplacement, pour que le catalogue reflète toute la base.
  */
 function toArtworkPreview(
   object: MuseumObject,
@@ -163,14 +131,10 @@ function toArtworkPreview(
 
 /** API brute → fiche complète. */
 function toArtwork(object: MuseumObject): Artwork {
-  /* La fiche affiche la reproduction en grand : on redemande donc l'aperçu dans
-     la largeur qui convient à ce contexte, pas celle des cartes de grille. */
   const preview = toArtworkPreview(object, THUMBNAIL_WIDTH.detail);
 
   /* `gallery` rejoue presque toujours l'image principale en première position :
-     on la retire pour ne pas l'afficher deux fois sur la fiche. Les vues dont
-     l'URL est inexploitable disparaissent simplement — inutile d'aligner des
-     cadres de remplacement sous la reproduction principale. */
+     on la retire pour ne pas l'afficher deux fois. */
   const gallery = (object.gallery ?? [])
     .map((src, index) =>
       toImageMedia(src, buildAlt(object, index + 1), THUMBNAIL_WIDTH.detail),
@@ -208,9 +172,9 @@ export async function getArtworks(
   }
 
   return {
-    /* Surtout PAS `.map(toArtworkPreview)` : `map` passe (élément, index, tableau)
-       à sa fonction, l'index atterrirait dans `wanted` et le site demanderait des
-       vignettes de 20 px. C'est arrivé — d'où le paramètre rendu obligatoire. */
+    /* Surtout pas `.map(toArtworkPreview)` : `map` passe (élément, index,
+       tableau), l'index atterrirait dans `wanted` et on demanderait des
+       vignettes de 20 px. C'est arrivé, d'où le paramètre obligatoire. */
     artworks: data.objects.map((object) =>
       toArtworkPreview(object, THUMBNAIL_WIDTH.card),
     ),
@@ -220,10 +184,7 @@ export async function getArtworks(
   };
 }
 
-/**
- * Une œuvre par son slug. `null` si elle n'existe pas — à la page d'appeler
- * `notFound()`, parce qu'elle seule sait comment réagir.
- */
+/** Une œuvre par son slug. `null` si elle n'existe pas : à la page d'appeler `notFound()`. */
 export async function getArtwork(slug: string): Promise<Artwork | null> {
   const object = await request<MuseumObject>(
     `/objects/${encodeURIComponent(slug)}`,
@@ -232,22 +193,13 @@ export async function getArtwork(slug: string): Promise<Artwork | null> {
 }
 
 /**
- * Un lot d'œuvres CHOISIES, dans l'ordre demandé.
+ * Un lot d'œuvres choisies, dans l'ordre demandé.
  *
- * Pourquoi une fonction à part plutôt qu'un `getArtworks()` qu'on filtrerait :
- * l'API ne sait pas répondre à « ces six-là ». Filtrer côté site obligerait à
- * télécharger les 39 œuvres pour en garder six, et surtout à les recevoir dans
- * l'ordre de l'API — or ici l'ordre est éditorial, il fait partie du choix.
+ * L'API ne sait pas répondre à « ces six-là » : filtrer côté site obligerait à
+ * télécharger les 39 œuvres et à perdre l'ordre, qui est éditorial.
  *
- * `Promise.all` et non une boucle `await` : les six requêtes sont indépendantes,
- * les enchaîner ferait attendre six allers-retours au lieu d'un.
- *
- * Une œuvre introuvable est simplement retirée du lot plutôt que de faire échouer
- * l'ensemble : un slug qui disparaîtrait du catalogue laisserait un panneau en
- * moins sur l'accueil, pas une page en erreur.
- *
- * Largeur `card` et non `detail` : ces aperçus alimentent des vignettes, jamais
- * une reproduction plein cadre.
+ * `Promise.all` : les six requêtes sont indépendantes. Une œuvre introuvable est
+ * retirée du lot plutôt que de faire échouer l'ensemble.
  */
 export async function getArtworkPreviews(
   slugs: readonly string[],
@@ -264,33 +216,15 @@ export async function getArtworkPreviews(
 }
 
 /**
- * Les AUTRES œuvres du même artiste, celle qu'on regarde exclue.
+ * Les autres œuvres du même artiste, celle qu'on regarde exclue.
  *
- * ── POURQUOI L'API FAIT LE TRAVAIL ──
- * `?artist=` est le seul filtre qu'elle expose, et c'est exactement celui dont
- * on a besoin. Une première version chargeait les 39 œuvres puis les comparait
- * sur place avec un score (artiste, mouvement, siècle, teinte) : c'était la
- * seule façon de ne jamais laisser une fiche sans suggestion, mais ça inventait
- * une notion de « proximité » que ni l'API ni le musée ne définissent. Le
- * critère retenu est celui qu'un visiteur formule tout seul devant une toile —
- * « qu'est-ce que ce peintre a fait d'autre ? » — et il se lit dans l'URL de la
- * requête.
+ * `?artist=` est le seul filtre exposé par l'API. Conséquence assumée : six
+ * artistes seulement ont plus d'une œuvre, donc 26 fiches sur 39 n'affichent
+ * aucune suggestion.
  *
- * ── CE QUE ÇA COÛTE, ET C'EST ASSUMÉ ──
- * Six artistes seulement ont plus d'une œuvre au catalogue. **26 fiches sur 39
- * n'affichent donc aucune suggestion** et se terminent sur la notice. C'est un
- * arbitrage rendu en connaissance du chiffre : un bloc qui ne dit qu'une chose
- * vraie plutôt qu'un bloc toujours rempli dont le lien reste à deviner.
- *
- * ── ⚠️ `?artist=` EST UNE RECHERCHE PARTIELLE, PAS UNE ÉGALITÉ ──
- * `?artist=van Gogh` renvoie les trois van Gogh, insensible à la casse
- * (vérifié sur l'API en ligne — la doc du cours dit « nom exact »). Sans
- * conséquence ici puisqu'on passe le nom complet lu sur l'œuvre elle-même, mais
- * à savoir avant de brancher ce paramètre sur une saisie utilisateur : elle
- * remonterait tous les artistes dont le nom CONTIENT ce qui est tapé.
- *
- * `null` en entrée — une œuvre d'artiste inconnu — donne un tableau vide sans
- * interroger l'API : il n'y a pas d'« autres œuvres du même anonyme ».
+ * ⚠️ C'est une recherche PARTIELLE et insensible à la casse, pas une égalité
+ * (la doc du cours dit « nom exact »). Sans conséquence ici puisqu'on passe le
+ * nom complet lu sur l'œuvre, mais à savoir avant de le brancher sur une saisie.
  */
 export async function getArtworksByArtist(
   artist: string | null,
@@ -302,12 +236,7 @@ export async function getArtworksByArtist(
   return artworks.filter((artwork) => artwork.slug !== excludeSlug);
 }
 
-/**
- * Tous les slugs du catalogue, pour `generateStaticParams`.
- *
- * Fonction dédiée plutôt qu'un `getArtworks()` dont on jetterait 90 % du
- * résultat : la lecture du code de la page dit alors exactement ce qu'elle fait.
- */
+/** Tous les slugs du catalogue, pour `generateStaticParams`. */
 export async function getArtworkSlugs(): Promise<string[]> {
   const { artworks } = await getArtworks();
   return artworks.map((artwork) => artwork.slug);

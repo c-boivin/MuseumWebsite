@@ -11,38 +11,23 @@ import { collectionStats } from "@/lib/stats";
 import { museumJsonLd } from "@/lib/structured-data";
 
 /**
- * L'accueil n'a ni titre ni description propres : il prend ceux du root layout,
- * qui décrivent déjà le musée. Seule la canonique est à déclarer — voir le
- * commentaire de `app/layout.tsx` sur les canoniques qui ne s'héritent pas.
+ * L'accueil prend le titre et la description du root layout. Seule la canonique
+ * est à déclarer, elle ne s'hérite pas — voir `app/layout.tsx`.
  */
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
 /**
- * Les quatre œuvres de la sélection, dans l'ordre du parcours.
+ * Les quatre œuvres de la sélection, choisies une à une : l'accueil est une
+ * vitrine, et une vitrine ne se remplit pas avec le début d'un inventaire.
  *
- * Choisies une à une, et non « les quatre premières du catalogue » : l'accueil
- * est une vitrine, et la vitrine d'un musée ne se remplit pas avec le début d'un
- * inventaire.
+ * Quatre et non six, d'abord par contrainte de mise en page (voir
+ * `Selection.tsx`). La sélection y gagne : les deux œuvres retirées étaient le
+ * seul doublon de mouvement des six.
  *
- * POURQUOI QUATRE et non six. Contrainte de mise en page d'abord : l'index de la
- * section décide à lui seul si le bloc rentre dans un écran, et six lignes l'en
- * faisaient sortir — le raisonnement complet est dans `Selection.tsx`. Mais la
- * sélection y gagne : les deux œuvres retirées étaient l'Impression, soleil
- * levant de Monet et le Bal du moulin de la Galette de Renoir, c'est-à-dire le
- * SEUL doublon de mouvement des six. Quatre œuvres couvrent donc autant de
- * mouvements que six en couvraient.
- *
- * L'ORDRE EST CHRONOLOGIQUE — 1485, 1831, 1889, 1942 — ce qui donne un sens à la
- * numérotation de l'index : 01 à 04 se lisent comme un parcours de salle, pas
- * comme un classement de préférence. Quatre siècles, quatre mouvements, et une
- * œuvre non occidentale.
- *
- * `defaultIndex` (voir plus bas) désigne en revanche La Nuit étoilée, au milieu
- * du parcours : c'est elle qu'on voit à l'arrivée, parce que c'est la plus
- * immédiatement reconnaissable du lot. L'ordre de lecture et l'image d'accroche
- * n'ont pas à être le même choix.
+ * L'ordre est chronologique, ce qui donne un sens à la numérotation — 01 à 04 se
+ * lisent comme un parcours de salle, pas comme un classement.
  */
 const SELECTION_SLUGS = [
   "the-birth-of-venus",
@@ -51,35 +36,23 @@ const SELECTION_SLUGS = [
   "nighthawks",
 ] as const;
 
-/** Rang de `starry-night` dans la liste ci-dessus. */
+/** Rang de `starry-night` : la plus reconnaissable, donc celle qu'on voit en arrivant. */
 const SELECTION_DEFAULT = 2;
 
 /**
  * Page d'accueil.
  *
- * Elle n'écrit aucun style : elle assemble des sections et leur passe du
- * contenu. C'est le bon critère pour juger la bibliothèque de composants — si
- * une page doit écrire ses propres classes de mise en page, c'est qu'il manque
- * un composant.
+ * Elle n'écrit aucun style, elle assemble des sections. C'est le bon critère
+ * pour juger la bibliothèque de composants : si une page doit écrire ses propres
+ * classes de mise en page, c'est qu'il manque un composant.
  *
- * SON RYTHME est délibérément inégal : les hauteurs alternent — un écran plein
- * (Hero), un bloc court, un écran plein et sombre (la sélection), puis un
- * dernier bloc en hauteur libre qui se termine avant le bas de l'écran. Quatre
- * blocs plein écran identiques donneraient quatre arrêts interchangeables — on
- * descendrait sans jamais savoir où on en est. Ici chaque bloc court sert de
- * respiration entre deux temps forts, et le dernier, qui ne remplit pas
- * l'écran, annonce la fin de la page.
+ * Son rythme est délibérément inégal — un écran plein, un bloc court, un écran
+ * plein et sombre, un dernier bloc en hauteur libre. Quatre blocs identiques
+ * donneraient quatre arrêts interchangeables.
  *
- * DEUX APPELS API, et chacun a sa raison :
- * - la sélection demande nommément six œuvres, pour ne pas télécharger un
- *   catalogue entier afin d'en montrer une poignée ;
- * - les chiffres clés, eux, portent sur l'ENSEMBLE du fonds : ils ne peuvent pas
- *   se calculer sur six œuvres. Les deux appels partent en parallèle, et le même
- *   cache d'une heure les couvre (voir `lib/museum.ts`) : la page reste
- *   pré-générée, un visiteur ne déclenche jamais ces requêtes.
- *
- * Les deux œuvres qui illustrent le Hero et le bloc éditorial sont servies en
- * local depuis `data/featured-artworks.ts` — voir ce fichier pour le pourquoi.
+ * Deux appels API en parallèle : la sélection demande nommément quatre œuvres,
+ * les chiffres clés portent sur l'ensemble du fonds et ne peuvent pas se
+ * calculer dessus. Le cache d'une heure les couvre, la page reste pré-générée.
  */
 export default async function HomePage() {
   const [selection, catalogue] = await Promise.all([
@@ -91,10 +64,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Le musée décrit pour les moteurs de recherche : adresse, horaires,
-          année d'ouverture. Posé UNIQUEMENT ici — c'est une description du lieu,
-          pas de la page, et la répéter partout n'apprendrait rien de plus.
-          N'affiche rien. Voir `lib/structured-data.ts`. */}
+      {/* Description du lieu et non de la page : posée uniquement ici. N'affiche
+          rien, voir `lib/structured-data.ts`. */}
       <JsonLd data={museumJsonLd()} />
 
       <Hero
@@ -106,21 +77,12 @@ export default async function HomePage() {
         height="screen"
       />
 
-      {/* Le seul chemin de l'accueil vers la billetterie. Les autres blocs
-          mènent tous à la collection ou au musée lui-même : sans celui-ci, la
-          page où le visiteur AGIT n'était atteignable que par la navigation du
-          header.
+      {/* Le seul chemin de l'accueil vers la billetterie : les autres blocs
+          mènent à la collection ou au musée. En deuxième position, le bouton est
+          à un écran de l'arrivée.
 
-          IL EST PLACÉ EN DEUXIÈME, juste après le Hero : le bouton d'accès à la
-          billetterie est à un écran de l'arrivée, sans avoir à traverser la
-          page. Sa hauteur libre, courte, entre deux blocs plein écran, en fait
-          une respiration plutôt qu'une étape du parcours — et ses chiffres
-          prennent le relais du titre sans lui disputer l'écran.
-
-          IL NE PREND AUCUNE PROP : ses trois chiffres se dérivent tout seuls de
-          `data/site.ts` et de la grille tarifaire, pas du catalogue. C'est ce
-          qui le distingue du bloc éditorial plus bas, dont les chiffres viennent
-          de l'API — deux séries, deux sources, aucun doublon. */}
+          Il ne prend aucune prop : ses chiffres se dérivent de `data/site.ts` et
+          de la grille tarifaire, pas du catalogue — deux séries, deux sources. */}
       <MuseumFigures />
 
       <Selection
@@ -128,9 +90,8 @@ export default async function HomePage() {
         title="Quatre œuvres pour commencer"
         artworks={selection}
         defaultIndex={SELECTION_DEFAULT}
-        /* Le nombre vient du catalogue, comme les chiffres du bloc suivant : un
-           « voir les 39 œuvres » écrit en dur deviendrait faux à la première
-           œuvre ajoutée à l'API. */
+        /* Le nombre vient du catalogue : un « voir les 39 œuvres » écrit en dur
+           deviendrait faux à la première œuvre ajoutée. */
         action={{
           label: `Voir les ${stats.artworkCount} œuvres`,
           href: "/collection",
@@ -144,9 +105,7 @@ export default async function HomePage() {
           "De la Renaissance italienne au surréalisme, le parcours se lit comme une généalogie : chaque salle met une œuvre en vis-à-vis de celles qui l'ont rendue possible. On passe de Vermeer à Van Gogh sans changer d'étage.",
           "Chaque œuvre est documentée par une notice complète — artiste, mouvement, lieu de conservation.",
         ]}
-        /* Les trois chiffres sont calculés depuis le catalogue, jamais écrits en
-           dur : voir `lib/stats.ts`. Une œuvre ajoutée à l'API les met à jour
-           toute seule à la prochaine régénération. */
+        /* Calculés depuis le catalogue, jamais écrits en dur : voir `lib/stats.ts`. */
         figures={[
           { value: String(stats.artworkCount), label: "œuvres au catalogue" },
           {
@@ -160,8 +119,8 @@ export default async function HomePage() {
         action={{ label: "En savoir plus sur le musée", href: "/a-propos" }}
         image={featuredArtworks["water-lilies"]}
         imageCaption="Détail — Water Lilies, Claude Monet"
-        /* La loupe se justifie ICI et pas ailleurs : chez Monet, la touche EST
-           le sujet. Sur une estampe à aplats, grossir ne montrerait rien. */
+        /* La loupe se justifie ici : chez Monet la touche EST le sujet. Sur une
+           estampe à aplats, grossir ne montrerait rien. */
         lens
       />
     </>

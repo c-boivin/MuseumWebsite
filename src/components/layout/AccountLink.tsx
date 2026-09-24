@@ -16,40 +16,23 @@ const TRIGGER = accountNavigation.signedIn[0];
  * L'entrée « compte » du Header : un lien « Connexion », ou un menu déroulant
  * une fois connecté.
  *
- * ── POURQUOI UN MENU, ALORS QUE LE SITE NE FAIT RIEN FLOTTER ──
- * C'est une entorse assumée à une règle du projet, et il faut la connaître pour
- * ne pas l'étendre : rien d'autre ne se superpose au contenu ici, et c'est ce
- * qui avait fait abandonner le premier curseur. Un lien unique avait d'abord été
- * retenu pour cette raison. Il déplaçait le problème plus qu'il ne le résolvait :
- * la déconnexion se retrouvait au fond d'une page de compte, donc à deux
- * navigations d'un visiteur qui voulait simplement partir, et rien n'annonçait
- * dans le header qu'il y avait plus d'une page derrière. Le menu regroupe les
- * trois choses qu'on peut vouloir faire de son compte, à l'endroit où l'on
- * pense à son compte.
+ * Un menu alors que rien d'autre ne se superpose au contenu sur ce site : c'est
+ * une entorse assumée. Le lien unique retenu d'abord mettait la déconnexion au
+ * fond d'une page de compte, à deux navigations d'un visiteur qui voulait
+ * simplement partir. Le menu reste discret pour tenir le reste de la règle —
+ * mêmes filets, aucune ombre, aucune animation d'ouverture.
  *
- * Il reste discret pour tenir le reste de la règle : mêmes filets, mêmes
- * couleurs que le header, aucune ombre portée, aucune animation d'ouverture.
+ * La session est lue côté client : le Header est monté par le root layout, y
+ * appeler `headers()` basculerait tout le site en rendu dynamique, les 39 fiches
+ * pré-générées comprises. Voir `lib/auth-client.ts` et `account/SessionSync`.
  *
- * ── LA SESSION EST LUE CÔTÉ CLIENT ──
- * Le Header est monté par le root layout : y appeler `headers()` basculerait
- * TOUT le site en rendu dynamique, `/collection` et les 39 fiches pré-générées
- * comprises. Voir `lib/auth-client.ts`, et `account/SessionSync` pour la raison
- * pour laquelle une connexion faite sur le serveur doit être annoncée au
- * navigateur.
+ * Pendant l'attente on affiche « Connexion » : un squelette clignoterait dans le
+ * header à chaque page y compris pour les visiteurs sans compte, et n'afficher
+ * rien ferait apparaître l'entrée après coup en poussant le panier.
  *
- * ── PENDANT L'ATTENTE, ON AFFICHE « CONNEXION » ──
- * `isPending` dure le temps d'un aller-retour. Un squelette clignoterait dans le
- * header à CHAQUE page, y compris pour les visiteurs sans compte, c'est-à-dire
- * presque tous ; n'afficher rien ferait apparaître l'entrée après coup en
- * poussant le panier de côté. L'état déconnecté est le seul qui soit juste pour
- * la majorité et jamais faux bien longtemps pour les autres.
- *
- * ── LA PLACE DU PLUS LARGE EST RÉSERVÉE D'AVANCE ──
- * « Mon compte » et son chevron sont plus larges que « Connexion » : sans
- * réservation, la bascule décalerait le panier vers la gauche un dixième de
- * seconde après l'arrivée sur chaque page. Les deux contenus possibles sont donc
- * rendus dans la MÊME cellule de grille, l'un d'eux invisible — la largeur de la
- * cellule vaut celle du plus large, sans aucune valeur en dur.
+ * Les deux contenus possibles sont rendus dans la même cellule de grille, l'un
+ * invisible : sans cette réservation, la bascule décalerait le panier un dixième
+ * de seconde après l'arrivée sur chaque page.
  */
 export function AccountLink() {
   const { data: session, isPending } = authClient.useSession();
@@ -57,8 +40,7 @@ export function AccountLink() {
 
   return (
     <div className="grid font-medium text-sm">
-      {/* Les deux fantômes de largeur. `aria-hidden` ET `inert`, parce qu'ils ne
-          font pas le même travail : le premier les retire de la lecture d'écran,
+      {/* `aria-hidden` ET `inert` : le premier les retire de la lecture d'écran,
           le second empêche d'y arriver au clavier — un chevron invisible qui
           prend le focus serait un arrêt de tabulation sur rien. */}
       <span
@@ -95,10 +77,8 @@ export function AccountLink() {
 }
 
 /**
- * Le menu lui-même, isolé pour qu'il ne se monte QUE connecté.
- *
- * Ce n'est pas cosmétique : ses écouteurs de fermeture (clavier, clic à côté) ne
- * doivent pas exister pour un visiteur qui n'a pas de compte.
+ * Le menu, isolé pour qu'il ne se monte que connecté : ses écouteurs de
+ * fermeture n'ont pas à exister pour un visiteur sans compte.
  */
 function AccountMenu() {
   const pathname = usePathname();
@@ -108,15 +88,13 @@ function AccountMenu() {
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
-  /* LA PAGE COURANTE SOULIGNE LE BOUTON, comme n'importe quelle entrée du
-     header : sans ça, le seul repère indiquant qu'on est dans son espace compte
-     disparaîtrait derrière un menu fermé. Même règle de correspondance que
-     `NavLinks` — `/compte` et tout ce qui vit dessous. */
+  /* Sans ce soulignement, le seul repère indiquant qu'on est dans son espace
+     compte disparaîtrait derrière un menu fermé. Même règle que `NavLinks`. */
   const isCurrent =
     pathname === TRIGGER.href || pathname.startsWith(`${TRIGGER.href}/`);
 
-  /* Fermeture sur navigation : le panneau de transition retarde le changement de
-     chemin, le menu resterait ouvert par-dessus la page suivante. */
+  /* Le panneau de transition retarde le changement de chemin : sans ça le menu
+     resterait ouvert par-dessus la page suivante. */
   // biome-ignore lint/correctness/useExhaustiveDependencies: c'est le changement de `pathname` qui ferme, pas son contenu.
   useEffect(() => {
     setIsOpen(false);
@@ -128,9 +106,8 @@ function AccountMenu() {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       setIsOpen(false);
-      /* LE FOCUS REVIENT AU BOUTON. Sans ça, fermer au clavier laisse le focus
-         sur un élément qui vient de disparaître : la tabulation suivante repart
-         du début du document, et l'on se retrouve au lien d'évitement. */
+      /* Sans ce retour, fermer au clavier laisse le focus sur un élément
+         disparu : la tabulation suivante repart du début du document. */
       trigger.current?.focus();
     }
 
@@ -155,8 +132,8 @@ function AccountMenu() {
       <button
         ref={trigger}
         type="button"
-        /* `menu` et non `true` : la valeur dit CE QUI s'ouvre, et les lecteurs
-           d'écran annoncent alors « menu » au lieu d'un simple « développable ». */
+        /* `menu` et non `true` : les lecteurs d'écran annoncent alors « menu »
+           au lieu d'un simple « développable ». */
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
@@ -173,12 +150,8 @@ function AccountMenu() {
       </button>
 
       {isOpen && (
-        /* `right-0` : le menu s'aligne sur le bord DROIT de son bouton, qui est
-           lui-même le dernier élément du header. Aligné à gauche, il déborderait
-           de la page.
-
-           `top-full` + `mt-3` le décroche du bouton sans le décoller du header :
-           il reste visiblement rattaché à ce qui l'a ouvert. */
+        /* `right-0` : le bouton est le dernier élément du header, aligné à
+           gauche le menu déborderait de la page. */
         <div
           id={menuId}
           role="menu"
@@ -186,10 +159,6 @@ function AccountMenu() {
           className="absolute top-full right-0 mt-3 min-w-44 border border-paper/15 bg-ink-deep py-2"
         >
           {accountMenu.map((link) => {
-            /* Même règle que `NavLinks` : le chemin lui-même et ses sous-pages.
-               Il n'y a plus de cas « exact » à traiter depuis que les deux
-               entrées portent leur propre nom — aucune n'est le préfixe de
-               l'autre. */
             const isActive =
               pathname === link.href || pathname.startsWith(`${link.href}/`);
 
@@ -211,8 +180,8 @@ function AccountMenu() {
             );
           })}
 
-          {/* Le filet sépare ce qui NAVIGUE de ce qui AGIT. Se déconnecter n'est
-              pas une troisième page, et c'est la seule entrée du menu dont on ne
+          {/* Le filet sépare ce qui navigue de ce qui agit : se déconnecter
+              n'est pas une troisième page, et c'est la seule entrée dont on ne
               revient pas d'un clic sur Précédent. */}
           <div className="my-2 border-paper/15 border-t" />
 
@@ -227,12 +196,8 @@ function AccountMenu() {
 }
 
 /**
- * Le chevron du bouton.
- *
- * Même trait que les autres icônes du site : 1.5 d'épaisseur, angles nets,
- * `currentColor`, `aria-hidden` puisque le bouton porte déjà son nom. Il pivote
- * à l'ouverture — c'est la seule animation du menu, et elle dit dans quel sens
- * ça va se passer.
+ * Le chevron du bouton. Même trait que les autres icônes du site, et il pivote à
+ * l'ouverture — la seule animation du menu, elle dit dans quel sens ça va.
  */
 function Chevron({ open = false }: { open?: boolean }) {
   return (

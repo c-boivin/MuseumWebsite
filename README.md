@@ -61,36 +61,6 @@ pnpm dev
 
 Le site est servi sur [http://localhost:3000](http://localhost:3000).
 
-### Derrière un proxy d'entreprise
-
-Si la collection s'affiche en erreur et que la console montre
-`UNABLE_TO_GET_ISSUER_CERT_LOCALLY`, le réseau inspecte le trafic HTTPS et Node refuse le
-certificat de l'API. Ce n'est pas un bug du site. Deux contournements :
-
-```bash
-# Propre : indiquer le certificat racine de l'entreprise
-NODE_EXTRA_CA_CERTS=/chemin/vers/ca-entreprise.pem pnpm dev
-
-# Rapide, développement uniquement : désactiver la vérification TLS
-NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm dev
-```
-
-⚠️ **Ces deux lignes sont du Bash.** Dans PowerShell — le terminal par défaut de
-VS Code sous Windows — `VARIABLE=valeur commande` n'est pas une syntaxe valide : la
-variable n'est pas transmise, le serveur démarre quand même, et l'erreur revient à
-l'identique. La forme PowerShell est :
-
-```powershell
-$env:NODE_TLS_REJECT_UNAUTHORIZED = "0"; pnpm dev
-```
-
-**Symptôme à reconnaître** : les pages déjà visitées s'affichent (le cache de `fetch`
-les garde), les autres tombent en erreur. On croit alors à une régression du code alors
-que c'est le réseau — une œuvre jamais ouverte échoue, qu'on y arrive par la grille ou
-par un lien en bas de fiche.
-
-Aucun des deux n'est nécessaire hors de ce réseau, ni sur Vercel.
-
 ## Commandes
 
 | Commande        | Rôle                                                      |

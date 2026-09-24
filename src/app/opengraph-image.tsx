@@ -2,29 +2,22 @@ import { ImageResponse } from "next/og";
 import { site } from "@/data/site";
 
 /**
- * Image de partage par défaut du site — celle qui s'affiche quand un lien est
- * collé dans une conversation ou sur un réseau social.
+ * Image de partage par défaut du site.
  *
- * Fichier spécial de l'App Router : Next l'exécute AU BUILD, enregistre le PNG,
- * et ajoute tout seul les `<meta property="og:image">` qui vont avec. Placé à la
- * racine de `app/`, il sert de repli à toutes les pages — sauf les fiches
- * œuvres, dont le `generateMetadata` déclare sa propre image, la reproduction de
- * l'œuvre. C'est le bon partage dans les deux cas : une toile pour une toile,
- * la carte du musée pour tout le reste.
+ * Fichier spécial de l'App Router : Next l'exécute au build, enregistre le PNG
+ * et ajoute les `<meta property="og:image">`. À la racine de `app/`, il sert de
+ * repli à toutes les pages sauf les fiches œuvres, qui déclarent la reproduction
+ * de l'œuvre — une toile pour une toile, la carte du musée pour le reste.
  *
- * POURQUOI UNE IMAGE FABRIQUÉE ET NON UN PNG DANS `public/` : le nom du musée et
- * sa signature vivent dans `data/site.ts`. Une image exportée d'un outil de
- * dessin les figerait dans un fichier binaire, et resterait fausse après un
- * changement de nom — le genre d'écart que personne ne va vérifier.
+ * Une image fabriquée et non un PNG dans `public/` : le nom du musée vit dans
+ * `data/site.ts`, et une image exportée d'un outil de dessin resterait fausse
+ * après un changement de nom.
  *
- * ⚠️ POLICE PAR DÉFAUT, ET C'EST DÉLIBÉRÉ. Le rendu passe par Satori, qui ne
- * sait pas lire les polices chargées par `next/font` : pour obtenir Instrument
- * Serif ici, il faudrait télécharger le fichier de police au build, depuis
- * Google Fonts, en forçant un vieux `User-Agent` pour recevoir du TTF — Satori
- * ne gère pas le WOFF2. Une dépendance réseau fragile au milieu du build, qui
- * tombe derrière un proxy d'entreprise (voir le README), pour une différence de
- * dessin sur une vignette de partage. La composition porte l'identité à la
- * place : format, échelle et couleurs du site.
+ * ⚠️ Police par défaut, et c'est délibéré : le rendu passe par Satori, qui ne
+ * sait pas lire les polices de `next/font`. Il faudrait télécharger le fichier
+ * au build depuis Google Fonts en forçant un vieux `User-Agent` pour recevoir du
+ * TTF — une dépendance réseau fragile au milieu du build, pour une différence de
+ * dessin sur une vignette. La composition porte l'identité à la place.
  */
 export const alt = `${site.name} — ${site.tagline}`;
 
@@ -33,8 +26,8 @@ export const size = { width: 1200, height: 630 };
 
 export const contentType = "image/png";
 
-/* Repris de `globals.css`. Écrits en dur parce que Satori ne lit pas la feuille
-   de style du site : il ne connaît ni Tailwind ni les variables CSS. */
+/* Repris de `globals.css`, en dur parce que Satori ne lit pas la feuille de
+   style : il ne connaît ni Tailwind ni les variables CSS. */
 const INK = "#141210";
 const INK_SOFT = "#56514c";
 const PAPER = "#faf9f7";

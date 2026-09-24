@@ -11,12 +11,8 @@ import {
 import { cn } from "@/lib/cn";
 
 /**
- * Convertit une valeur en rem vers des pixels réels.
- *
- * Indispensable ici : le rem du site est fluide (`calc(100vw / 1440 * 16)` dans
- * globals.css), donc 1rem ne vaut PAS 16px. Les calculs ci-dessous travaillent
- * sur des mesures du DOM, qui sont en pixels : il faut convertir avant de
- * mélanger les deux.
+ * Le rem du site est fluide (`calc(100vw / 1440 * 16)`), donc 1rem ne vaut pas
+ * 16px. Les calculs ci-dessous travaillent sur des mesures du DOM, en pixels.
  */
 function remToPx(rem: number): number {
   return (
@@ -27,17 +23,14 @@ function remToPx(rem: number): number {
 interface GlassLensProps {
   children: ReactNode;
   /**
-   * Diamètre de la loupe, en rem.
-   *
-   * 10rem = 160px sur la maquette 1440. Réglage d'équilibre, pas de confort :
-   * trop grande, la loupe cache la bande qu'elle est censée aider à regarder et
-   * ressemble à un calque posé dessus ; trop petite, on ne voit plus assez de
+   * Diamètre en rem. Réglage d'équilibre : trop grande, la loupe cache la bande
+   * qu'elle est censée aider à regarder ; trop petite, on ne voit plus assez de
    * matière peinte pour que le grossissement dise quelque chose.
    */
   size?: number;
   /** Grossissement. Au-delà de 2, la reproduction devient floue. */
   zoom?: number;
-  /** Retard du suivi du curseur, en secondes. C'est lui qui donne le poids du verre. */
+  /** Retard du suivi du curseur, en secondes : c'est lui qui donne le poids du verre. */
   duration?: number;
   className?: string;
 }
@@ -45,31 +38,23 @@ interface GlassLensProps {
 /**
  * Loupe de verre qui suit le curseur et grossit ce qu'elle survole.
  *
- * POURQUOI UNE LOUPE ET PAS UN « EFFET DE VERRE » DÉCORATIF. C'est le geste
- * qu'on fait devant une toile : s'approcher pour voir la touche. Sur un détail
- * de Monet, dont le sujet EST la matière peinte, l'effet dit quelque chose au
- * lieu de faire joli — et il donne une raison de survoler l'image.
+ * C'est le geste qu'on fait devant une toile : s'approcher pour voir la touche.
+ * Sur un détail de Monet, dont le sujet EST la matière peinte, l'effet dit
+ * quelque chose au lieu de faire joli.
  *
- * POURQUOI PAS three.js. La version React Bits de cet effet (FluidGlass) fait de
- * la vraie réfraction avec @react-three/fiber, @react-three/drei, three et un
- * modèle 3D : environ 1 Mo de JavaScript sur la page d'accueil, et surtout la
- * reproduction rendue DANS un canvas WebGL — elle perdrait sa balise <img>, donc
- * son texte alternatif et l'optimisation de next/image. Sur un musée qui vise le
- * RGAA AA et dont l'accueil est jugé au LCP, le compte n'y était pas.
+ * Pas three.js : la version React Bits de cet effet fait de la vraie réfraction
+ * avec @react-three/fiber, three et un modèle 3D — environ 1 Mo sur l'accueil,
+ * et surtout la reproduction rendue dans un canvas WebGL, donc sans balise <img>,
+ * sans texte alternatif et sans next/image. Sur un musée qui vise le RGAA AA, le
+ * compte n'y était pas.
  *
- * COMMENT ÇA MARCHE, parce que ce n'est pas un filtre : la loupe contient une
- * SECONDE copie du contenu, agrandie et décalée pour que le point survolé reste
- * exactement sous le curseur. C'est de l'optique de loupe, pas du flou —
- * `mise à l'échelle z`, puis décalage `rayon - point × z`. Le reste (l'anneau,
- * le reflet, l'ombre portée) est du CSS : c'est ce qui fait lire le disque comme
- * du verre plutôt que comme un trou.
+ * Ce n'est pas un filtre : la loupe contient une SECONDE copie du contenu,
+ * agrandie et décalée pour que le point survolé reste sous le curseur — mise à
+ * l'échelle z, puis décalage `rayon - point × z`. Le reste (anneau, reflet,
+ * ombre) est du CSS, et c'est lui qui fait lire le disque comme du verre.
  *
- * `aria-hidden` sur la loupe : elle duplique un contenu déjà annoncé. Sans lui,
- * un lecteur d'écran lirait deux fois le même texte alternatif.
- *
- * SOURIS UNIQUEMENT (`pointerType === "mouse"`). Au doigt il n'y a pas de survol
- * : la loupe apparaîtrait sous le contact, masquerait ce qu'on veut voir et ne
- * partirait plus. Le site est de toute façon desktop.
+ * Souris uniquement : au doigt il n'y a pas de survol, la loupe apparaîtrait
+ * sous le contact et ne partirait plus.
  */
 export function GlassLens({
   children,
@@ -82,13 +67,12 @@ export function GlassLens({
   const lensRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
-  /* Position visée par la loupe, en pixels dans le repère du conteneur. Dans une
-     ref et non un state : elle change à chaque image d'animation, un rendu React
-     par frame serait du gaspillage pur. */
+  /* Dans une ref et non un state : la position change à chaque image, un rendu
+     React par frame serait du gaspillage pur. */
   const point = useRef({ x: 0, y: 0 });
   const radius = useRef(0);
 
-  /** Écrit la position de la loupe ET le décalage de la copie agrandie. */
+  /** Écrit la position de la loupe et le décalage de la copie agrandie. */
   const apply = useCallback(() => {
     const lens = lensRef.current;
     const inner = innerRef.current;
@@ -101,16 +85,14 @@ export function GlassLens({
     lens.style.left = `${x - r}px`;
     lens.style.top = `${y - r}px`;
 
-    /* …et la copie agrandie est décalée pour que ce même point tombe au centre
-       du disque. `origin-top-left` + échelle z : un point (x, y) se retrouve en
-       (x·z, y·z), qu'on ramène au centre (r, r) en soustrayant. */
+    /* …et la copie agrandie décalée pour que ce point tombe au centre du disque :
+       avec `origin-top-left`, un point (x, y) se retrouve en (x·z, y·z). */
     inner.style.left = `${r - x * zoom}px`;
     inner.style.top = `${r - y * zoom}px`;
   }, [zoom]);
 
-  /* La copie agrandie doit faire exactement la taille du conteneur, et le
-     diamètre de la loupe dépend du rem, donc de la largeur de l'écran : les deux
-     se remesurent à chaque redimensionnement. */
+  /* La copie doit faire la taille du conteneur, et le diamètre dépend du rem
+     donc de la largeur de l'écran : les deux se remesurent au redimensionnement. */
   useEffect(() => {
     const root = rootRef.current;
     const lens = lensRef.current;
@@ -135,8 +117,7 @@ export function GlassLens({
     return () => observer.disconnect();
   }, [apply, size]);
 
-  /* Les tweens survivraient au démontage du composant et animeraient des nœuds
-     détachés : on les tue avec lui. */
+  /* Les tweens survivraient au démontage et animeraient des nœuds détachés. */
   useEffect(
     () => () => {
       gsap.killTweensOf([point.current, lensRef.current]);
@@ -176,9 +157,9 @@ export function GlassLens({
 
     const { x, y } = localPoint(event);
 
-    /* On anime l'OBJET, pas le DOM : `onUpdate` recalcule ensuite les deux
-       positions ensemble. Les animer séparément les désynchroniserait, et le
-       contenu grossi glisserait dans son disque. */
+    /* On anime l'objet, pas le DOM : `onUpdate` recalcule les deux positions
+       ensemble. Les animer séparément les désynchroniserait, et le contenu
+       grossi glisserait dans son disque. */
     gsap.to(point.current, {
       x,
       y,
@@ -202,16 +183,13 @@ export function GlassLens({
   }
 
   return (
-    /* `data-cursor-hidden` : le point noir de `motion/Cursor` s'efface tant
-       qu'on est sur la loupe. Elle EST déjà un curseur — un disque qui suit la
-       souris, avec son anneau de verre — et le point venait se poser en plein
-       milieu de la lentille, là où l'on regarde justement le détail agrandi.
-       Deux curseurs superposés, dont un qui masque le sujet de l'autre.
+    /* `data-cursor-hidden` : le point de `motion/Cursor` s'efface sur la loupe,
+       qui EST déjà un curseur — le point venait se poser en plein milieu de la
+       lentille, là où l'on regarde le détail agrandi.
 
-       L'attribut est posé ICI et non sur les appelants : c'est la loupe qui sait
-       qu'elle dessine son propre curseur, et tout usage futur en hérite sans
-       qu'on ait à y penser. Le curseur du système, lui, reste masqué — c'est
-       bien la loupe qui doit tenir ce rôle, pas la flèche. */
+       Posé ici et non sur les appelants : c'est la loupe qui sait qu'elle dessine
+       son propre curseur. Celui du système reste masqué, c'est bien la loupe qui
+       tient ce rôle. */
     <div
       ref={rootRef}
       data-cursor-hidden
@@ -223,8 +201,8 @@ export function GlassLens({
       {children}
 
       {/* `invisible opacity-0` en état initial : le HTML est rendu par le
-          serveur, donc peint avant que GSAP s'exécute. Sans ça, la loupe
-          apparaîtrait une fraction de seconde dans le coin haut-gauche. */}
+          serveur, donc peint avant GSAP. Sans ça, la loupe apparaîtrait une
+          fraction de seconde dans le coin haut-gauche. */}
       <div
         ref={lensRef}
         aria-hidden="true"
@@ -239,13 +217,12 @@ export function GlassLens({
           {children}
         </div>
 
-        {/* L'ANNEAU DE VERRE. Quatre couches, chacune avec son rôle : le filet
-            clair dessine le bord de la lentille, le halo haut et l'ombre basse
-            lui donnent une épaisseur, l'ombre portée la décolle de la toile.
+        {/* Quatre couches : le filet clair dessine le bord, le halo haut et
+            l'ombre basse donnent l'épaisseur, l'ombre portée décolle de la toile.
 
-            Toutes les couleurs passent par `color-mix` sur les tokens du site —
-            règle du projet : aucune valeur de couleur en dur dans un composant.
-            Et toutes les distances sont en rem, pour suivre l'échelle fluide. */}
+            Toutes les couleurs passent par `color-mix` sur les tokens — aucune
+            valeur de couleur en dur dans un composant — et les distances sont en
+            rem pour suivre l'échelle fluide. */}
         <span
           className="absolute inset-0 rounded-full"
           style={{

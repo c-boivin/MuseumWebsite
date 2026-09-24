@@ -23,27 +23,22 @@ interface SelectionProps {
 /**
  * Sélection d'œuvres : un index à gauche, la reproduction et son cartel à droite.
  *
- * POURQUOI CETTE FORME plutôt qu'un bandeau d'images côte à côte. Un musée ne
- * montre jamais une œuvre sans la nommer : le cartel — titre, artiste, date,
- * mouvement — fait partie de l'accrochage. Un bandeau de vignettes rognées
- * donnait six timbres-poste anonymes ; ici on montre UNE œuvre à la fois, en
- * entier, et l'index dit d'avance ce qu'on va voir. C'est aussi ce qui met en
- * avant le `movement`, la ligne éditoriale du site, au lieu de l'enterrer.
+ * Un musée ne montre jamais une œuvre sans la nommer — le cartel fait partie de
+ * l'accrochage. Un bandeau de vignettes donnait six timbres-poste anonymes ; ici
+ * on montre une œuvre à la fois, en entier, et l'index dit d'avance ce qu'on va
+ * voir. C'est aussi ce qui met en avant le `movement`, la ligne éditoriale du
+ * site.
  *
- * Le survol d'une ligne change l'œuvre affichée, le clic ouvre sa fiche. Le
- * survol ne CACHE donc rien : tout est déjà lisible sans lui, il ne fait
- * qu'illustrer. C'est la différence avec l'accordéon précédent, où il fallait
- * survoler pour savoir ce qu'on regardait.
+ * Le survol change l'œuvre affichée, le clic ouvre sa fiche. Le survol ne cache
+ * rien : tout est lisible sans lui, il ne fait qu'illustrer — la différence avec
+ * l'accordéon précédent, où il fallait survoler pour savoir ce qu'on regardait.
  *
- * POURQUOI CE COMPOSANT EST CLIENT : il tient un état (l'œuvre montrée) et
- * écoute le survol et le focus. La page d'accueil, elle, reste un Server
- * Component — elle se contente d'importer cette section.
+ * Client parce qu'il tient un état ; la page d'accueil reste un Server Component.
  *
- * GSAP plutôt qu'une transition CSS : le fondu enchaîné doit pouvoir être
- * INTERROMPU proprement quand on balaie l'index à la souris. `overwrite: "auto"`
- * tue la tween en cours sur la même propriété ; une transition CSS, elle,
- * repartirait de sa position courante avec sa durée pleine et l'ancienne œuvre
- * resterait visible sous la nouvelle.
+ * GSAP plutôt qu'une transition CSS : le fondu doit pouvoir être interrompu
+ * quand on balaie l'index. `overwrite: "auto"` tue la tween en cours ; une
+ * transition CSS repartirait de sa position avec sa durée pleine, et l'ancienne
+ * œuvre resterait visible sous la nouvelle.
  */
 export function Selection({
   artworks,
@@ -55,9 +50,8 @@ export function Selection({
   const [active, setActive] = useState(defaultIndex);
   const slideRefs = useRef<(HTMLElement | null)[]>([]);
   const captionRef = useRef<HTMLElement>(null);
-  /* Le premier passage doit POSER l'état, pas l'animer : sans ce drapeau, la
-     première œuvre apparaîtrait en fondu au chargement de la page, après le
-     rendu serveur. */
+  /* Le premier passage doit poser l'état, pas l'animer : sans ce drapeau, la
+     première œuvre apparaîtrait en fondu après le rendu serveur. */
   const firstRunRef = useRef(true);
 
   useEffect(() => {
@@ -65,7 +59,7 @@ export function Selection({
     if (!slides.length) return;
 
     /* Lu ici et non au rendu : `window` n'existe pas sur le serveur, et une
-       lecture au rendu produirait un HTML serveur différent du HTML client. */
+       lecture au rendu produirait un HTML serveur différent du client. */
     const prefersReduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -79,8 +73,7 @@ export function Selection({
            clic. Une image à `opacity: 0` reste cliquable. */
         autoAlpha: i === active ? 1 : 0,
         /* Le léger recul des images sortantes donne sa profondeur au fondu :
-           sans lui, deux reproductions qui se croisent à la même échelle
-           ressemblent à un clignotement. */
+           sans lui, deux reproductions à la même échelle clignotent. */
         scale: i === active ? 1 : 1.02,
         duration,
         ease: "power2.out",
@@ -117,7 +110,7 @@ export function Selection({
           <div className="space-y-3">
             {eyebrow && <p className="eyebrow text-paper/50">{eyebrow}</p>}
             {/* Heading fixe `text-ink` dans ses propres classes : sur fond sombre
-                il faut le surcharger explicitement, l'héritage ne suffit pas. */}
+                il faut le surcharger, l'héritage ne suffit pas. */}
             <Heading as="h2" className="text-paper">
               {title}
             </Heading>
@@ -133,38 +126,28 @@ export function Selection({
           )}
         </div>
 
-        {/* `min-h-0` autorise la ligne à RÉTRÉCIR sous la taille de son contenu :
-            un élément flex refuse de passer sous sa taille intrinsèque par
-            défaut, et la reproduction déborderait de l'écran au lieu de se
-            contenter de la place restante.
+        {/* `min-h-0` autorise la ligne à rétrécir sous la taille de son contenu,
+            sans quoi la reproduction déborderait de l'écran.
 
-            `max-h-artwork` règle le défaut symétrique : la ligne s'étire sur
-            toute la hauteur restante alors que la LARGEUR de la colonne de
-            l'œuvre vient de la grille, donc de la largeur de l'écran. Sur une
-            fenêtre haute et étroite, la reproduction virait au portrait
-            démesuré pendant que l'index à côté rétrécissait — le rem du site
-            suivant la largeur. Le plafond en rem raccroche l'œuvre à cette même
-            échelle ; il est au-dessus de ce qu'un écran de référence lui laisse,
-            donc il ne se déclenche que sur les fenêtres anormalement hautes. Le
-            `justify-center` du parent recentre le bloc quand il mord, au lieu de
-            laisser un blanc sous l'œuvre. */}
+            `max-h-artwork` règle le défaut symétrique : la largeur de la colonne
+            vient de la grille, donc de la largeur de l'écran, et sur une fenêtre
+            haute et étroite la reproduction virait au portrait démesuré. Le
+            plafond en rem la raccroche à l'échelle du site ; il ne se déclenche
+            que sur les fenêtres anormalement hautes, et le `justify-center` du
+            parent recentre le bloc quand il mord. */}
         <div className="grid min-h-0 max-h-artwork flex-1 grid-cols-[0.85fr_1fr] items-stretch gap-20">
-          {/* COMBIEN DE LIGNES CET INDEX PEUT-IL TENIR : quatre, cinq au
-              maximum. C'est LUI qui décide si le bloc rentre dans l'écran, et il
-              faut comprendre pourquoi avant d'en ajouter une.
+          {/* Quatre lignes, cinq au maximum : c'est cet index qui décide si le
+              bloc rentre dans l'écran.
 
-              Le rem du site est indexé sur la LARGEUR du viewport (voir
-              globals.css). Sur un écran large mais court — un 1920×1080 avec sa
-              barre d'onglets, le cas le plus courant — chaque ligne mesure donc
-              un tiers de plus que sur la maquette 1440, alors que la hauteur
-              disponible, elle, a diminué. Le pire cas n'est pas le petit écran :
-              c'est l'écran large et bas.
+              Le rem du site est indexé sur la LARGEUR du viewport. Sur un écran
+              large mais court — un 1920×1080 avec sa barre d'onglets — chaque
+              ligne mesure un tiers de plus que sur la maquette 1440 alors que la
+              hauteur a diminué : le pire cas n'est pas le petit écran, c'est
+              l'écran large et bas.
 
-              La reproduction, elle, se laisse comprimer (`min-h-0` + `flex-1`) :
-              elle rétrécit jusqu'à devenir minuscule avant que quoi que ce soit
-              déborde. L'index, non — une ligne fait la hauteur de son texte, un
-              point c'est tout. Six lignes suffisaient à pousser le bloc hors de
-              l'écran. */}
+              La reproduction se laisse comprimer (`min-h-0` + `flex-1`), l'index
+              non : une ligne fait la hauteur de son texte. Six lignes suffisaient
+              à pousser le bloc hors de l'écran. */}
           <ol className="flex min-h-0 flex-col justify-center">
             {artworks.map((artwork, i) => {
               const isActive = i === active;
@@ -219,18 +202,18 @@ export function Selection({
           <figure className="flex min-h-0 flex-col gap-6">
             <Frame tone="ink" className="min-h-0 flex-1">
               {artworks.map((artwork, i) => (
-                /* <div> et non <span> : <Media /> rend un <div>, qu'un <span>
-                   ne peut pas contenir sans produire du HTML invalide. */
+                /* <div> et non <span> : <Media /> rend un <div>, qu'un <span> ne
+                   peut pas contenir sans produire du HTML invalide. */
                 <div
                   key={artwork.slug}
                   ref={(el) => {
                     slideRefs.current[i] = el;
                   }}
-                  /* Empilées, et non montées/démontées : c'est ce qui permet de
+                  /* Empilées et non montées/démontées : c'est ce qui permet de
                      faire se croiser deux reproductions. Toutes sont donc
                      chargées d'entrée — compromis assumé pour que le survol
                      n'ouvre jamais sur un cadre vide, et deuxième raison de
-                     tenir la sélection courte (voir le commentaire de l'index). */
+                     tenir la sélection courte. */
                   className={cn(
                     "absolute inset-0",
                     i === defaultIndex ? "opacity-100" : "opacity-0",
@@ -251,8 +234,8 @@ export function Selection({
               ))}
             </Frame>
 
-            {/* LE CARTEL. Même hiérarchie que sur un mur de musée : l'œuvre, puis
-                l'artiste, et la datation renvoyée à droite. */}
+            {/* Même hiérarchie que sur un mur de musée : l'œuvre, puis l'artiste,
+                et la datation renvoyée à droite. */}
             <figcaption
               ref={captionRef}
               className="flex items-baseline justify-between gap-8 border-paper/15 border-t pt-4"

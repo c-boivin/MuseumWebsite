@@ -1,10 +1,10 @@
 /**
  * Balises conservées dans les textes riches de l'API.
  *
- * Liste blanche volontairement courte : les descriptions de l'API Museum
- * n'utilisent que de la mise en forme de paragraphe. Tout ce qui n'est pas ici
- * est retiré, y compris <a> — un lien injecté dans un contenu tiers est un
- * vecteur d'hameçonnage, et aucune description n'en a besoin.
+ * Liste blanche volontairement courte : les descriptions n'utilisent que de la
+ * mise en forme de paragraphe. `<a>` en est exclu — un lien injecté dans un
+ * contenu tiers est un vecteur d'hameçonnage, et aucune description n'en a
+ * besoin.
  */
 const ALLOWED_TAGS = new Set([
   "p",
@@ -21,12 +21,11 @@ const ALLOWED_TAGS = new Set([
 ]);
 
 /**
- * Supprime les balises dont le CONTENU est dangereux, ce contenu compris.
+ * Supprime les balises dont le contenu est dangereux, ce contenu compris.
  *
- * Étape commune aux deux fonctions du fichier. Retirer seulement les balises
- * laisserait `alert(1)` traîner comme texte : sans danger dans le corps de la
- * page, mais ça remontait jusque dans la `<meta description>` — donc dans les
- * résultats de recherche et les aperçus de partage.
+ * Étape commune aux deux fonctions : retirer seulement les balises laisserait
+ * `alert(1)` traîner comme texte, ce qui remontait jusque dans la
+ * `<meta description>` — donc dans les résultats de recherche.
  */
 function stripDangerousBlocks(html: string): string {
   return html.replace(
@@ -36,25 +35,22 @@ function stripDangerousBlocks(html: string): string {
 }
 
 /**
- * Nettoie une chaîne HTML venue de l'API avant de l'injecter dans la page.
+ * Nettoie une chaîne HTML de l'API avant de l'injecter dans la page.
  *
- * POURQUOI : le champ `description` de l'API contient du HTML, et l'afficher
- * impose `dangerouslySetInnerHTML`. Sans filtre, quiconque contrôle l'API
- * exécuterait du JavaScript chez nos visiteurs (faille XSS). On ne fait pas
- * confiance à une source qu'on ne maîtrise pas, même fournie par le cours.
+ * Le champ `description` contient du HTML, l'afficher impose
+ * `dangerouslySetInnerHTML` : sans filtre, quiconque contrôle l'API exécuterait
+ * du JavaScript chez nos visiteurs.
  *
- * LIMITE À CONNAÎTRE : un nettoyage à l'expression régulière n'est pas
- * infaillible face à du HTML volontairement malformé. Sur un site en production
- * on brancherait une vraie bibliothèque (DOMPurify). Ici, la liste blanche + la
- * suppression de tous les attributs couvrent les vecteurs réalistes, sans ajouter
- * de dépendance pour un projet d'école.
+ * Limite à connaître : un nettoyage à l'expression régulière n'est pas
+ * infaillible face à du HTML volontairement malformé. En production on
+ * brancherait DOMPurify ; ici la liste blanche et la suppression de tous les
+ * attributs couvrent les vecteurs réalistes sans ajouter de dépendance.
  */
 export function sanitizeRichText(html: string): string {
   return (
     stripDangerousBlocks(html)
       /* La balise autorisée est réécrite sans le moindre attribut (exit
-         `onclick`, `href`, `src`) ; les autres disparaissent en laissant leur
-         texte. */
+         `onclick`, `href`) ; les autres disparaissent en laissant leur texte. */
       .replace(/<\/?([a-z0-9-]+)\b[^>]*>/gi, (match, rawName: string) => {
         const name = rawName.toLowerCase();
         if (!ALLOWED_TAGS.has(name)) return "";
@@ -67,9 +63,9 @@ export function sanitizeRichText(html: string): string {
 /**
  * Réduit une chaîne HTML à du texte brut, tronqué proprement.
  *
- * Sert aux métadonnées : une balise <meta name="description"> ne peut pas
- * contenir de HTML, et Google coupe autour de 160 caractères. On coupe donc
- * nous-mêmes, sur un espace, pour ne pas laisser un mot à moitié.
+ * Pour les métadonnées : une `<meta description>` ne peut pas contenir de HTML,
+ * et Google coupe autour de 160 caractères. On coupe sur un espace pour ne pas
+ * laisser un mot à moitié.
  */
 export function toPlainText(html: string, maxLength = 160): string {
   const text = stripDangerousBlocks(html)

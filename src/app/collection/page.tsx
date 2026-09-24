@@ -11,10 +11,9 @@ export const metadata: Metadata = {
   title: "Collection",
   description:
     "L'ensemble des œuvres exposées : peintures, fresques et estampes, de la Renaissance au surréalisme.",
-  /* La page se visite aussi avec des filtres dans l'URL (`?mouvement=…`), qui
-     n'en changent pas le contenu aux yeux d'un moteur de recherche : la
-     canonique désigne l'adresse nue, pour que les variantes ne se fassent pas
-     concurrence dans l'index. */
+  /* La page se visite aussi avec des filtres dans l'URL, qui n'en changent pas
+     le contenu : la canonique désigne l'adresse nue, pour que les variantes ne
+     se fassent pas concurrence dans l'index. */
   alternates: { canonical: "/collection" },
 };
 
@@ -22,48 +21,37 @@ export const metadata: Metadata = {
  * Page Collection — la grille complète du catalogue.
  *
  * L'en-tête est statique et part immédiatement ; seule la grille attend l'API,
- * derrière un <Suspense>. L'utilisateur voit donc le titre de la page avant même
- * que les données existent.
+ * derrière un <Suspense>.
  *
- * POURQUOI UN <Suspense> ICI ET PAS UN FICHIER `loading.tsx` — le piège coûte une
- * heure si on ne le connaît pas : un `loading.tsx` placé dans `app/collection/`
- * s'applique à TOUT le sous-arbre, `[slug]` compris. Or une réponse qui a commencé
- * à être streamée est déjà partie avec un statut HTTP 200, et `notFound()` ne peut
- * plus le changer : une œuvre inexistante répondait donc 200 au lieu de 404.
- * En descendant la frontière de streaming ici, la fiche œuvre retrouve son vrai
- * 404 et la liste garde son squelette de chargement. Vérifié avec `next start`.
+ * Un <Suspense> ici et pas un fichier `loading.tsx` : celui-ci s'appliquerait à
+ * tout le sous-arbre, `[slug]` compris. Or une réponse qui a commencé à être
+ * streamée est déjà partie avec un statut 200, et `notFound()` ne peut plus le
+ * changer — une œuvre inexistante répondait donc 200 au lieu de 404. En
+ * descendant la frontière de streaming ici, la fiche retrouve son vrai 404.
  */
 export default function CollectionPage() {
   return (
-    /* `compact`, comme la marge haute des blocs d'accroche des autres pages : le
-       site commence alors à la même hauteur partout.
+    /* `compact`, comme la marge haute des autres pages : le site commence à la
+       même hauteur partout.
 
-       Mais PAS `height="screen"` ici, contrairement à l'accueil, à la page À
-       propos et à la 404. Ces trois-là n'ont rien, ou rien d'essentiel, sous
-       leur bloc d'accroche. Ici, ce qui suit le titre EST la page : les 39
-       œuvres. Un en-tête plein écran les repousserait intégralement sous la
-       ligne de flottaison, et une page de catalogue qui n'affiche aucune œuvre à
-       l'arrivée a raté son seul travail.
+       Mais pas `height="screen"` : ce qui suit le titre EST la page. Un en-tête
+       plein écran repousserait les 39 œuvres sous la ligne de flottaison, et une
+       page de catalogue qui n'en affiche aucune à l'arrivée a raté son travail.
 
-       CETTE PAGE EST LA SEULE À COMPOSER SON EN-TÊTE À LA MAIN — les quatre
-       autres passent par <Hero />, qui pose lui-même le titre. C'est pour ça que
-       le corps du titre avait dérivé ici, et nulle part ailleurs : une taille
-       recopiée est une taille qui se désynchronise. Voir le <Heading> ci-dessous
-       avant d'y toucher. */
+       C'est la seule page à composer son en-tête à la main — les autres passent
+       par <Hero />. C'est pour ça que le corps du titre avait dérivé ici : une
+       taille recopiée est une taille qui se désynchronise. */
     <Section spacing="compact">
       <div className="max-w-reading space-y-6">
         <p className="eyebrow text-ink-mute">Collection permanente</p>
         <TextReveal>
-          {/* `display`, la taille des titres de <Hero /> — et non `title`, qui
-              était ici un reste. La hauteur du bloc n'a rien à voir avec le
-              corps du titre : plein écran ou pas, c'est L'ACCROCHE de la page,
-              au même rang que « Billetterie » ou que l'accroche de l'accueil.
-              À 2.75rem, /collection arrivait avec un titre deux fois plus petit
-              que toutes les autres pages du site.
+          {/* `display`, la taille des titres de <Hero /> : la hauteur du bloc n'a
+              rien à voir avec le corps du titre, c'est l'accroche de la page. À
+              2.75rem, /collection arrivait avec un titre deux fois plus petit que
+              les autres.
 
-              Ce n'est pas la règle « une seule taille par balise » : le <h1> de
-              la FICHE œuvre reste en `title`, parce qu'il titre un cartel à côté
-              d'une reproduction, pas une page. La taille suit le bloc. */}
+              Ce n'est pas « une seule taille par balise » : le <h1> de la fiche
+              reste en `title`, parce qu'il titre un cartel, pas une page. */}
           <Heading as="h1" size="display">
             Toutes les œuvres
           </Heading>
@@ -83,22 +71,19 @@ export default function CollectionPage() {
 }
 
 /**
- * Partie de la page qui dépend de l'API, isolée dans son propre composant.
+ * Partie qui dépend de l'API, isolée dans son propre composant : c'est la
+ * condition pour que <Suspense> serve à quelque chose, il ne peut suspendre que
+ * ce qu'il contient. Avec le `await` dans la page, toute la page attendrait.
  *
- * C'est la condition pour que <Suspense> serve à quelque chose : il ne peut
- * suspendre que ce qu'il contient. Si le `await` restait dans la page, toute la
- * page attendrait, squelette compris.
- *
- * Rendering : le fetch de `lib/museum.ts` porte un `revalidate`, donc cette page
- * est générée au build puis régénérée périodiquement (ISR). Elle ne coûte rien à
- * l'affichage tant que le catalogue ne bouge pas.
+ * Le fetch porte un `revalidate`, donc la page est générée au build puis
+ * régénérée périodiquement.
  */
 async function CollectionArtworks() {
   const { artworks } = await getArtworks();
 
   if (artworks.length === 0) {
-    /* Cas rare mais réel : l'API répond correctement, sans aucune œuvre
-       exploitable. Mieux vaut une phrase qu'une page blanche silencieuse. */
+    /* Rare mais réel : l'API répond correctement, sans aucune œuvre
+       exploitable. Mieux vaut une phrase qu'une page blanche. */
     return (
       <p className="mt-16 text-ink-soft">
         Aucune œuvre n&apos;est consultable pour le moment. Revenez d&apos;ici
@@ -108,8 +93,8 @@ async function CollectionArtworks() {
   }
 
   /* Le catalogue entier part au client, qui filtre sur place : 39 œuvres, c'est
-     quelques kilo-octets de JSON contre une requête serveur à chaque case
-     cochée. Le jour où le catalogue se compte en milliers, c'est ce choix-là
-     qu'il faudra revoir — pas l'interface. */
+     quelques kilo-octets contre une requête serveur à chaque case cochée. Le
+     jour où le catalogue se compte en milliers, c'est ce choix qu'il faudra
+     revoir, pas l'interface. */
   return <ArtworkBrowser artworks={artworks} />;
 }

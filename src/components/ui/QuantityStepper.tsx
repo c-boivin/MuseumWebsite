@@ -18,14 +18,13 @@ interface QuantityStepperProps {
 /**
  * Sélecteur de quantité : − valeur +.
  *
- * Générique et sans métier, d'où sa place dans `ui/` : il ne sait pas qu'il
- * compte des billets. Il pourrait compter n'importe quoi, et c'est ce qui le
- * rendra réutilisable si la boutique du musée arrive un jour.
+ * Générique et sans métier : il ne sait pas qu'il compte des billets, et
+ * pourrait compter n'importe quoi.
  *
- * De vrais `<button>` et pas un `<input type="number">` : le champ numérique
- * natif accepte le collage de texte, les décimales et les valeurs négatives, et
- * son apparence n'est pas stylable de la même façon d'un navigateur à l'autre.
- * Deux boutons ne peuvent produire qu'un entier dans les bornes.
+ * De vrais `<button>` et pas un `<input type="number">` : le champ natif accepte
+ * le collage de texte, les décimales et les valeurs négatives, et son apparence
+ * n'est pas stylable de la même façon d'un navigateur à l'autre. Deux boutons ne
+ * peuvent produire qu'un entier dans les bornes.
  */
 export function QuantityStepper({
   value,
@@ -39,15 +38,12 @@ export function QuantityStepper({
     "flex size-9 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:border-line disabled:text-ink-mute/40";
 
   return (
-    /* Un vrai `<fieldset>` plutôt qu'un `<div role="group">` : même annonce pour
-       le lecteur d'écran, mais avec l'élément HTML qui existe déjà pour ça —
-       c'est le choix déjà fait par `CheckboxGroup`. Sa légende est masquée à
-       l'œil : la grille tarifaire affiche déjà le nom du tarif juste à gauche,
-       le répéter à l'écran ne servirait qu'à alourdir la ligne. */
-    /* `gap-1` et non `gap-3` : à 0.75rem d'écart, les deux boutons et le nombre
-       se lisaient comme trois éléments indépendants posés côte à côte, pas comme
-       une seule commande. Resserrés, ils forment un groupe — et l'écart avec le
-       prix, à leur gauche, redevient ce qui sépare deux informations. */
+    /* Un vrai `<fieldset>` plutôt qu'un `<div role="group">` : même annonce,
+       avec l'élément HTML qui existe pour ça. Sa légende est masquée à l'œil, la
+       grille affichant déjà le nom du tarif juste à gauche.
+
+       `gap-1` et non `gap-3` : à 0.75rem, les deux boutons et le nombre se
+       lisaient comme trois éléments indépendants, pas comme une seule commande. */
     <fieldset className={cn("flex items-center gap-1", className)}>
       <legend className="sr-only">{label}</legend>
       <button

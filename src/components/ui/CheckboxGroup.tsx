@@ -4,25 +4,21 @@ export interface CheckboxOption {
   /** Valeur écrite dans l'URL. */
   value: string;
   /**
-   * Nom de l'option. Toujours obligatoire, même en mode pastille où il n'est pas
-   * affiché : c'est lui qu'annonce un lecteur d'écran, et qui apparaît au survol.
+   * Toujours obligatoire, même en mode pastille où il n'est pas affiché : c'est
+   * lui qu'annonce un lecteur d'écran, et qui apparaît au survol.
    */
   label: string;
   /** Couleur CSS de la pastille, en mode `swatches`. Ignoré en mode liste. */
   swatch?: string;
   /**
-   * Précision affichée sous le libellé, en mode liste uniquement.
-   *
-   * Ajouté pour les options de la billetterie, qui doivent dire ce qu'on achète
-   * (« Commentaire de 40 œuvres ») en plus de son nom. Optionnel : les filtres
-   * de la collection, dont le libellé se suffit à lui-même, n'y touchent pas et
-   * gardent exactement le rendu d'avant.
+   * Précision sous le libellé, en mode liste. Ajoutée pour les options de la
+   * billetterie, qui doivent dire ce qu'on achète en plus de son nom.
    */
   description?: string;
 }
 
 interface CheckboxGroupProps {
-  /** Titre du groupe, annoncé aux lecteurs d'écran via la légende du fieldset. */
+  /** Titre du groupe, annoncé via la légende du fieldset. */
   legend: string;
   options: CheckboxOption[];
   /** Valeurs actuellement cochées. */
@@ -37,19 +33,15 @@ interface CheckboxGroupProps {
 }
 
 /**
- * Groupe de cases à cocher, sans aucune connaissance du métier.
+ * Groupe de cases à cocher, sans aucune connaissance du métier : il reçoit des
+ * options et prévient son parent. C'est ce qui lui permet de servir aussi bien
+ * aux filtres de la collection qu'aux options de la billetterie.
  *
- * Il ne sait ni ce qu'est un siècle ni ce qu'est une teinte : il reçoit des
- * options, des valeurs cochées, et prévient son parent quand on clique. C'est ce
- * qui lui permettra de resservir tel quel pour les options de la billetterie.
- *
- * Choix d'accessibilité, et ils ne sont pas cosmétiques :
- * - `<fieldset>` + `<legend>` : un lecteur d'écran annonce « Siècle, groupe » en
- *   entrant dans la liste, au lieu de six cases sans contexte.
- * - de vraies `<input type="checkbox">` dans les deux modes : la navigation au
- *   clavier, l'annonce « coché / non coché » et le respect des réglages système
- *   viennent gratuitement avec l'élément natif. En mode pastille la case est
- *   masquée visuellement (`sr-only`) mais reste bien là, focusable et cochable.
+ * Deux choix d'accessibilité qui ne sont pas cosmétiques :
+ * - `<fieldset>` + `<legend>` : un lecteur d'écran annonce « Siècle, groupe » au
+ *   lieu de six cases sans contexte ;
+ * - de vraies `<input type="checkbox">` dans les deux modes. En mode pastille la
+ *   case est masquée visuellement mais reste focusable et cochable.
  */
 export function CheckboxGroup({
   legend,
@@ -66,14 +58,10 @@ export function CheckboxGroup({
       <div
         className={cn(
           "pt-1",
-          /* Grille de 4 plutôt qu'un `flex-wrap` : le retour à la ligne
-             automatique dépend de la largeur disponible et donnait 5 pastilles
-             puis 2, une rangée bancale. `w-fit` empêche les colonnes de
-             s'étaler sur toute la barre latérale.
-
-             `gap-1` et non `gap-3` : chaque pastille porte désormais sa propre
-             enveloppe de sélection, qui ajoute 0.25rem de chaque côté. L'écart
-             visible entre deux pastilles reste celui d'avant. */
+          /* Grille de 4 plutôt qu'un `flex-wrap`, dont le retour à la ligne
+             donnait 5 pastilles puis 2. `gap-1` et non `gap-3` : chaque pastille
+             porte son enveloppe de sélection, qui ajoute 0.25rem de chaque
+             côté. */
           layout === "swatches"
             ? "grid w-fit grid-cols-4 gap-1"
             : "flex flex-col gap-2",
@@ -94,19 +82,12 @@ export function CheckboxGroup({
               />
               <span className="sr-only">{option.label}</span>
 
-              {/* `peer-*` : l'apparence de la pastille suit l'état de la case
-                  masquée juste au-dessus, sans JavaScript. L'anneau marque la
-                  sélection ; `peer-focus-visible` reprend le même repère au
-                  clavier, sinon la tabulation deviendrait invisible.
-
-                  L'anneau est une BORDURE sur une enveloppe, et non un `ring`
-                  avec `ring-offset` : un ring se dessine hors de la boîte de
-                  l'élément, et la colonne de filtres étant un conteneur
-                  `overflow-y-auto` (qui rogne aussi sur les côtés), il était
-                  coupé sur la première colonne et sous la dernière rangée. Une
-                  bordure fait partie de la boîte : elle ne peut pas déborder.
-                  Transparente au repos, pour que la pastille ne bouge pas d'un
-                  pixel quand on la coche. */}
+              {/* `peer-*` : l'apparence suit l'état de la case masquée, sans
+                  JavaScript. L'anneau est une bordure sur une enveloppe et non
+                  un `ring` : un ring se dessine hors de la boîte, et la colonne
+                  de filtres étant en `overflow-y-auto`, il était coupé sur la
+                  première colonne. Transparent au repos, pour que la pastille ne
+                  bouge pas d'un pixel quand on la coche. */}
               <span
                 aria-hidden="true"
                 className={cn(
@@ -127,9 +108,9 @@ export function CheckboxGroup({
               key={option.value}
               className={cn(
                 "flex cursor-pointer gap-3 text-ink-soft text-sm transition-colors hover:text-ink",
-                /* Aligné en haut dès qu'il y a deux lignes : centrer la case sur
-                   un bloc de deux lignes la ferait flotter au milieu du texte,
-                   au lieu de pointer la ligne qu'elle coche. */
+                /* Aligné en haut dès qu'il y a deux lignes : centrée, la case
+                   flotterait au milieu du texte au lieu de pointer la ligne
+                   qu'elle coche. */
                 option.description ? "items-start" : "items-center",
               )}
             >

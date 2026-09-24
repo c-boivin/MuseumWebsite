@@ -10,27 +10,18 @@ interface AccountHeaderProps {
 /**
  * L'accroche commune aux pages de l'espace compte.
  *
- * ── IL NE PORTE PLUS NI NAVIGATION NI DÉCONNEXION ──
- * Il en avait : une barre reprenant les deux pages de l'espace, et le bouton de
- * sortie. Le menu déroulant du header (`layout/AccountLink`) porte désormais les
- * trois, et les garder ici aurait donné deux façons de faire la même chose à
- * deux endroits de l'écran — dont un bouton de déconnexion en double, qui est
- * précisément celui qu'il ne faut jamais chercher deux fois. Le menu gagne parce
- * qu'il est atteignable depuis N'IMPORTE quelle page, pas seulement une fois
- * déjà arrivé dans son compte.
+ * Il portait une barre de navigation et le bouton de déconnexion ; le menu
+ * déroulant du header porte désormais les trois, et les garder ici aurait donné
+ * deux boutons de déconnexion — précisément celui qu'il ne faut jamais chercher
+ * deux fois. Le menu gagne parce qu'il est atteignable depuis n'importe quelle
+ * page.
  *
- * ── CE QU'IL RESTE, ET POURQUOI CE N'EST PAS RIEN ──
- * Trois lignes de mise en page, mais partagées : sur-titre, titre en `display`,
- * chapeau — exactement l'anatomie de `/collection`. Ce n'est pas une coquetterie
- * de cohérence, c'est ce que la page raconte : `/compte` EST une page de
- * collection, celle du visiteur. Un autre gabarit aurait fait croire à un autre
- * type de contenu.
+ * Ce qu'il reste : sur-titre, titre en `display`, chapeau — l'anatomie de
+ * `/collection`. Ce n'est pas une coquetterie de cohérence, c'est ce que la page
+ * raconte : `/compte` EST une page de collection, celle du visiteur.
  *
- * ── UN COMPOSANT PLUTÔT QU'UN `layout.tsx` ──
- * Le layout de `/compte` pourrait porter ce bloc, mais il porterait alors le
- * `<h1>` de deux pages différentes : il faudrait soit le même titre partout,
- * soit le faire remonter depuis la page, ce que Next ne permet pas. Le layout ne
- * fait donc qu'une chose — vérifier qu'on a le droit d'être là.
+ * Un composant plutôt qu'un `layout.tsx` : le layout porterait le `<h1>` de deux
+ * pages différentes, et Next ne permet pas de le faire remonter depuis la page.
  *
  * Server Component : plus rien ici n'a besoin du navigateur.
  */
@@ -39,9 +30,9 @@ export function AccountHeader({ title, lead }: AccountHeaderProps) {
     <div className="max-w-reading space-y-6">
       <p className="eyebrow text-ink-mute">Votre compte</p>
 
-      {/* `key` : d'une page de l'espace à l'autre, React réutiliserait
-          l'instance et tenterait de patcher un titre dont SplitText a remplacé
-          les enfants. Même précaution que sur la fiche œuvre. */}
+      {/* `key` : d'une page à l'autre, React réutiliserait l'instance et
+          patcherait un titre dont SplitText a remplacé les enfants. Même
+          précaution que sur la fiche œuvre. */}
       <TextReveal key={title}>
         <Heading as="h1" size="display">
           {title}

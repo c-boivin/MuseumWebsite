@@ -3,20 +3,17 @@ import type { ArtworkPreview } from "@/types/artwork";
 /**
  * Critères de filtrage de la collection.
  *
- * Aucun des deux n'existe tel quel dans l'API : ce sont des valeurs DÉRIVÉES.
- * Les regrouper ici, en fonctions pures, permet de les réutiliser partout — la
- * grille pour filtrer, les cases à cocher pour compter — sans dupliquer la règle.
+ * Aucun des deux n'existe tel quel dans l'API : ce sont des valeurs dérivées.
+ * Des fonctions pures, réutilisées par la grille pour filtrer et par les cases à
+ * cocher pour compter.
  */
 
 /* ───────────────────────────── Siècle ───────────────────────────── */
 
 /**
- * Siècle d'une œuvre à partir de son année.
- *
- * `(année - 1) / 100 + 1` et non `année / 100 + 1` : l'an 1500 appartient au XVe
- * siècle, pas au XVIe. Le catalogue ne contient aucune année pile en fin de
- * siècle, donc les deux formules y donnent le même résultat — autant écrire la
- * juste, elle ne coûte rien.
+ * `(année - 1) / 100 + 1` et non `année / 100 + 1` : l'an 1500 appartient au
+ * XVe siècle. Le catalogue n'a aucune année pile en fin de siècle, les deux
+ * formules y donnent le même résultat — autant écrire la juste.
  */
 export function centuryOf(year: number | null): number | null {
   return year === null ? null : Math.floor((year - 1) / 100) + 1;
@@ -33,12 +30,8 @@ const ROMAN: Record<number, string> = {
 };
 
 /**
- * « XIXe », sans le mot « siècle ».
- *
- * Exporté à part parce que tous les affichages ne veulent pas la phrase
- * complète : les chiffres clés de l'accueil annoncent une fourchette
- * — « XVe — XXe » — où répéter « siècle » deux fois serait illisible.
- * Repli sur « 22e » pour un siècle hors de la table.
+ * « XIXe », sans le mot « siècle » : les chiffres clés de l'accueil annoncent
+ * une fourchette — « XVe — XXe » — où le répéter serait illisible.
  */
 export function centuryRoman(century: number): string {
   return ROMAN[century] ?? `${century}e`;
@@ -54,24 +47,17 @@ export function centuryLabel(century: number): string {
 /**
  * Teintes reconnues dans le champ `color` de l'API.
  *
- * POURQUOI DES MOTS-CLÉS plutôt que la valeur brute : `color` est un texte libre,
- * et les 39 œuvres ont 39 valeurs toutes différentes (« Bleu cobalt profond »,
- * « Ocre doré et brun sfumato »). Filtrer dessus tel quel donnerait 39 cases à
- * cocher menant chacune à une seule œuvre. En cherchant des mots de couleur, on
- * obtient 7 familles exploitables.
+ * Des mots-clés plutôt que la valeur brute : `color` est un texte libre et les
+ * 39 œuvres ont 39 valeurs différentes (« Bleu cobalt profond »). Filtrer dessus
+ * tel quel donnerait 39 cases menant chacune à une seule œuvre ; en cherchant
+ * des mots de couleur on obtient 7 familles.
  *
- * Conséquence intéressante : une œuvre porte souvent DEUX teintes — 27 sur 39.
- * Le filtre est donc multi-valeur des deux côtés, ce qui justifie les cases à
- * cocher plutôt qu'un choix unique.
+ * Une œuvre porte souvent deux teintes — 27 sur 39 — ce qui justifie les cases à
+ * cocher plutôt qu'un choix unique. L'ordre suit le cercle chromatique.
  *
- * L'ordre de la liste est celui d'affichage, choisi pour suivre le cercle
- * chromatique plutôt que la fréquence.
- *
- * `swatch` pointe un token de `globals.css` plutôt qu'une valeur en dur : la
- * règle du projet veut qu'aucune couleur ne s'écrive dans un composant, et ça
- * permet de retoucher la palette des filtres au même endroit que le reste.
- * `label` reste indispensable même si l'interface n'affiche que la pastille —
- * c'est lui que lit un lecteur d'écran.
+ * `swatch` pointe un token de `globals.css` : aucune couleur ne s'écrit dans un
+ * composant. `label` reste indispensable même si l'interface n'affiche que la
+ * pastille, c'est lui que lit un lecteur d'écran.
  */
 export const HUES = [
   {
@@ -136,15 +122,9 @@ export interface ArtworkFilters {
 }
 
 /**
- * Une œuvre passe-t-elle les filtres ?
- *
- * Deux règles, et elles ne sont pas les mêmes :
- * - ENTRE deux critères, c'est un ET : une œuvre du XIXe **et** bleue.
- * - À L'INTÉRIEUR d'un critère, c'est un OU : cocher bleu et vert montre les
- *   œuvres bleues **ou** vertes. Cocher deux cases doit élargir le résultat,
- *   sinon l'utilisateur a l'impression que l'interface est cassée.
- *
- * Un critère sans aucune case cochée ne filtre rien.
+ * Deux règles qui ne sont pas les mêmes : entre deux critères c'est un ET, à
+ * l'intérieur d'un critère un OU. Cocher deux cases doit élargir le résultat,
+ * sinon l'interface paraît cassée. Un critère sans case cochée ne filtre rien.
  */
 export function matchesFilters(
   artwork: ArtworkPreview,

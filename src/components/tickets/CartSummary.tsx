@@ -11,87 +11,60 @@ import { useCartStore, useTransitionStore } from "@/lib/store";
 /**
  * Le récapitulatif collant : ce qui est dans le panier, et ce que ça coûte.
  *
- * Il ne reçoit AUCUNE prop. Il lit le store, comme `TicketList` juste à côté
- * l'écrit — les deux ne se connaissent pas. C'est ce qui rend la mise en page
- * libre : déplacer le récapitulatif ailleurs dans la page, ou un jour dans le
- * Header, ne demande de toucher ni à l'un ni à l'autre.
+ * Aucune prop : il lit le store, comme `TicketList` juste à côté l'écrit — les
+ * deux ne se connaissent pas, ce qui rend la mise en page libre.
  *
- * Il ne stocke rien non plus : `computeCart` recalcule tout à chaque rendu à
- * partir des choix. Un total gardé en mémoire finirait toujours par survivre à
- * un changement de quantité qu'il aurait manqué.
+ * Il ne stocke rien non plus : `computeCart` recalcule tout à chaque rendu. Un
+ * total gardé en mémoire finirait par survivre à un changement de quantité qu'il
+ * aurait manqué.
  *
- * DESSINÉ COMME UN BILLET, et c'est le seul endroit du site où un bloc
- * d'interface prend une forme figurative. Fond noir comme le Header et le
- * Footer, nom du musée en tête, séparation perforée entre le détail et le
- * montant dû. Une boîte bordée faisait le travail mais ne racontait rien : sur
- * une page qui ne vend rien pour de vrai, c'est le seul objet que le visiteur
- * repart avec.
- *
- * La perforation n'est pas un décor gratuit : elle sépare ce qu'on a choisi de
- * ce qu'on doit payer, c'est-à-dire exactement l'endroit où le regard doit
- * s'arrêter.
+ * Dessiné comme un billet, seul endroit du site où un bloc d'interface prend une
+ * forme figurative : sur une page qui ne vend rien pour de vrai, c'est le seul
+ * objet que le visiteur repart avec. La perforation sépare ce qu'on a choisi de
+ * ce qu'on doit payer, là où le regard doit s'arrêter.
  */
 export function CartSummary() {
   const quantities = useCartStore((state) => state.quantities);
   const options = useCartStore((state) => state.options);
   const clear = useCartStore((state) => state.clear);
 
-  /* IL S'EFFACE QUAND ON QUITTE LA PAGE, et c'est le seul bloc du site à le
-     faire. Le panneau de `motion/PageTransition` est noir et monte DU BAS ; le
-     panier est noir, large, et collé EN HAUT. Résultat : le mur avait déjà
-     couvert tout le bas de l'écran que la moitié droite du haut était noire
-     depuis le premier instant — on ne voyait plus une page qui se fait
-     recouvrir, on voyait un noir installé, et la transition paraissait plus
-     longue ici que partout ailleurs alors qu'elle dure exactement autant.
+  /* Il s'efface quand on quitte la page, seul bloc du site à le faire : le
+     panneau de transition est noir et monte du bas, le panier est noir, large et
+     collé en haut. On ne voyait plus une page qui se fait recouvrir mais un noir
+     déjà installé, et la transition paraissait plus longue ici qu'ailleurs.
 
-     Le correctif est pris côté PAGE et non côté transition : c'est la page qui
-     a un bloc de la couleur du mur, pas le mur qui est trop lent. Le panier
-     rend donc sa place avant que le mur n'arrive, et le mur monte sur un fond
-     clair comme sur les autres pages.
+     Le correctif est pris côté page : c'est elle qui a un bloc de la couleur du
+     mur, pas le mur qui est trop lent.
 
-     Sur `leaving` seulement : au retour (`entering`), le panneau couvre encore
-     l'écran, l'opacité est déjà revenue à 1 quand il se retire. Et en
-     `prefers-reduced-motion` la phase ne quitte jamais `idle` — `TransitionLink`
-     navigue sans animer — donc rien à neutraliser ici. */
+     Sur `leaving` seulement : au retour, l'opacité est déjà revenue à 1 quand le
+     panneau se retire. Et en `prefers-reduced-motion` la phase ne quitte jamais
+     `idle`. */
   const isLeaving = useTransitionStore((state) => state.phase === "leaving");
 
   const cart = computeCart(quantities, options);
   const isEmpty = cart.ticketLines.length === 0;
 
   return (
-    /* `sticky` calé sous le header collant, même calcul que la colonne de
-       filtres de la collection : le total doit rester visible pendant qu'on
-       parcourt la grille tarifaire, sinon il faut remonter pour savoir où on en
-       est.
+    /* `sticky` calé sous le header, même calcul que la colonne de filtres : le
+       total doit rester visible pendant qu'on parcourt la grille.
 
-       `data-tone="ink"` : inverse le contour de focus (globals.css). Sans lui,
-       la tabulation jusqu'au bouton « Payer » dessinerait un trait noir sur
-       fond noir. */
+       `data-tone="ink"` inverse le contour de focus : sans lui, la tabulation
+       jusqu'à « Payer » dessinerait un trait noir sur fond noir. */
     <aside
-      /* Cible de l'icône panier du Header (`layout/CartLink`). Sans elle, le
-         lien tombait en haut de `/billetterie`, c'est-à-dire sur une accroche
-         plein écran : on cliquait sur son panier et on ne le voyait pas. */
+      /* Cible de l'icône panier du Header. Sans elle, le lien tombait en haut de
+         `/billetterie`, sur une accroche plein écran : on cliquait sur son panier
+         et on ne le voyait pas. */
       id="panier"
       data-tone="ink"
-      /* `scroll-mt` : on arrive sur le BLOC, pas collé au sommet du panier.
-         Sans lui, l'ancre calait le bord haut du panneau juste sous le header et
-         la page paraissait tronquée — plus aucune respiration au-dessus.
-
-         La valeur reprend le token de padding de la section qui l'entoure : le
-         défilement s'arrête donc pile à la frontière du bloc, et ce sont ses
-         propres marges qui font l'air. Si le rythme de la section change, le
-         point d'arrivée suit tout seul.
-
-         Il s'AJOUTE au `scroll-padding-top` du document (globals.css), et c'est
-         exactement ce qu'on veut ici : 4rem pour passer sous le header, plus la
-         respiration du bloc. Vrai aussi bien du saut natif de Next, quand on
-         arrive depuis une autre page, que du défilement amorti de Lenis quand on
-         est déjà sur /billetterie — les deux lisent les deux propriétés. */
+      /* `scroll-mt` : on arrive sur le bloc, pas collé à son sommet. La valeur
+         reprend le token de padding de la section, donc le point d'arrivée suit
+         si le rythme change. Il s'ajoute au `scroll-padding-top` du document, ce
+         qui vaut aussi bien pour le saut natif de Next que pour Lenis. */
       className={cn(
         "sticky top-[calc(var(--spacing-header)+1.5rem)] scroll-mt-section-sm rounded-lg bg-ink-deep px-8 py-7 text-paper",
-        /* 300 ms : assez court pour que la place soit rendue bien avant que le
-           mur n'atteigne le haut de l'écran (il met 0,95 s à couvrir), assez
-           long pour que le bloc se retire au lieu de s'éteindre d'un coup. */
+        /* 300 ms : la place est rendue bien avant que le mur atteigne le haut de
+           l'écran (0,95 s pour couvrir), et le bloc se retire au lieu de
+           s'éteindre d'un coup. */
         "transition-opacity duration-300 ease-out",
         isLeaving && "opacity-0",
       )}
@@ -103,8 +76,8 @@ export function CartSummary() {
       </Heading>
 
       {isEmpty ? (
-        /* L'état vide est la première chose que voit un visiteur en arrivant :
-           c'est à lui de dire où cliquer, pas de s'excuser d'être vide. */
+        /* C'est la première chose que voit un visiteur en arrivant : à lui de
+           dire où cliquer, pas de s'excuser d'être vide. */
         <div className="mt-8 flex flex-col items-center gap-4 text-center">
           <CartIcon className="size-8 text-paper/30" />
           <p className="text-paper/60 text-sm leading-relaxed">
@@ -115,10 +88,9 @@ export function CartSummary() {
         </div>
       ) : (
         <>
-          {/* Le défilement porte sur les LIGNES seules, pas sur tout le panneau :
-              le total et le bouton doivent rester visibles quoi qu'il arrive, et
-              un `overflow` sur le panneau rognerait les encoches de la
-              perforation, qui débordent volontairement sur les côtés. */}
+          {/* Le défilement porte sur les lignes seules : le total et le bouton
+              doivent rester visibles, et un `overflow` sur le panneau rognerait
+              les encoches de la perforation, qui débordent volontairement. */}
           <ul className="scrollbar-none mt-6 max-h-76 space-y-4 overflow-y-auto">
             {cart.ticketLines.map((line) => (
               <CartLineRow key={line.id} line={line} unit="billet" />
@@ -129,8 +101,8 @@ export function CartSummary() {
             ))}
           </ul>
 
-          {/* L'économie est affichée en valeur, pas seulement signalée : « tarif
-              groupe appliqué » n'apprend rien, « −90 € » se comprend seul. */}
+          {/* En valeur et pas seulement signalée : « tarif groupe appliqué »
+              n'apprend rien, « −90 € » se comprend seul. */}
           {cart.savings > 0 && (
             <p className="mt-5 flex items-baseline justify-between text-sm">
               <span className="text-paper/60">Remise groupe</span>
@@ -150,11 +122,9 @@ export function CartSummary() {
                 {cart.visitors} personne{cart.visitors > 1 ? "s" : ""}
               </span>
             </p>
-            {/* `title` et non `figure`, alors que c'est bien un chiffre : le
-                palier `figure` est celui des chiffres MIS EN SCÈNE de l'accueil,
-                au milieu du blanc. Celui-ci vit dans un panneau de 24rem à côté
-                de son intitulé — à 3.5rem, un total à quatre chiffres viendrait
-                buter contre le mot « Total ». */}
+            {/* `title` et non `figure` : ce palier est celui des chiffres mis en
+                scène de l'accueil. Ici, à 3.5rem, un total à quatre chiffres
+                viendrait buter contre le mot « Total ». */}
             <p className="font-display text-title leading-none tabular-nums">
               {formatPrice(cart.total)}
             </p>
@@ -168,21 +138,17 @@ export function CartSummary() {
           variant="inverse"
           disabled
           className="w-full"
-          /* Désactivé plutôt qu'absent : le parcours doit se voir jusqu'au bout,
-             c'est lui qu'on présente. Mais rien derrière ne serait honnête — ce
-             site n'encaisse aucun paiement, et une fausse page de confirmation
-             n'aurait rien appris à personne. */
+          /* Désactivé plutôt qu'absent : le parcours doit se voir jusqu'au bout.
+             Mais rien derrière ne serait honnête — ce site n'encaisse aucun
+             paiement. */
         >
-          {/* « Payer » seul, sans le montant : le total est affiché juste
-              au-dessus, en gros et sur sa propre ligne. Le répéter sur le bouton
+          {/* « Payer » seul : le total est juste au-dessus, en gros. Le répéter
               donnait deux fois le même chiffre à 2rem d'écart. */}
           Payer
         </Button>
 
-        {/* `text-balance` : sans lui, la phrase se coupait juste avant « réel. »
-            et laissait un mot seul sur la seconde ligne. Le navigateur répartit
-            désormais le texte sur des lignes de longueur proche. Il ne s'agit
-            pas de raccourcir la phrase — elle dit exactement ce qu'il faut. */}
+        {/* `text-balance` : sans lui, la phrase laissait un mot seul sur la
+            seconde ligne. */}
         <p className="text-balance text-center text-paper/40 text-xs leading-relaxed">
           Paiement indisponible : projet d&apos;école, sans encaissement réel.
         </p>
@@ -206,13 +172,10 @@ export function CartSummary() {
 /**
  * La ligne perforée qui sépare le détail du montant dû.
  *
- * Les deux encoches sont des disques de la couleur du FOND DE PAGE, posés à
- * cheval sur les bords du panneau : c'est ce qui donne l'illusion d'un billet
- * poinçonné, sans rien découper. Leur décalage — `-left-10`, soit 2.5rem — vaut
- * les 2rem de padding horizontal du panneau plus la moitié du disque.
- *
- * Elles sont donc solidaires de `px-8` sur le panneau et de `bg-paper` sur la
- * section : changer l'un des deux demande de revenir ici.
+ * Les encoches sont des disques de la couleur du fond de page, posés à cheval
+ * sur les bords : illusion d'un billet poinçonné, sans rien découper. Leur
+ * décalage vaut le padding horizontal du panneau plus la moitié du disque —
+ * elles sont donc solidaires de `px-8` ici et de `bg-paper` sur la section.
  */
 function Perforation() {
   return (
@@ -233,11 +196,8 @@ interface CartLineRowProps {
 }
 
 /**
- * Une ligne du récapitulatif.
- *
- * Extraite parce que les tarifs et les options s'affichent exactement pareil —
- * seul le mot qui suit la quantité change. Deux composants presque identiques
- * auraient divergé à la première retouche.
+ * Extraite parce que les tarifs et les options s'affichent exactement pareil,
+ * seul le mot qui suit la quantité change.
  */
 function CartLineRow({ line, unit }: CartLineRowProps) {
   return (

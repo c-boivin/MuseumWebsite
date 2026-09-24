@@ -17,7 +17,7 @@ interface AboutStatementProps {
   eyebrow?: string;
   title: string;
   paragraphs: string[];
-  /** Chiffres clés. Trois au maximum : la rangée est en trois colonnes. */
+  /** Trois au maximum : la rangée est en trois colonnes. */
   figures?: Figure[];
   action?: { label: string; href: string };
   /**
@@ -28,16 +28,14 @@ interface AboutStatementProps {
   /** Cartel de la bande : « Détail — Water Lilies, Claude Monet ». */
   imageCaption?: string;
   /**
-   * Ajoute une loupe de verre qui suit le curseur sur la reproduction.
-   *
-   * Une PROP et non un choix codé en dur, parce que l'effet ne se justifie que
-   * sur une œuvre dont la matière peinte est le sujet — un détail de Monet, oui ;
-   * une estampe à aplats, non. C'est le bloc qui sait quelle œuvre il montre.
+   * Une prop et non un choix codé en dur : l'effet ne se justifie que sur une
+   * œuvre dont la matière peinte est le sujet. C'est le bloc qui sait quelle
+   * œuvre il montre.
    */
   lens?: boolean;
   /**
-   * `screen` cale le bloc sur exactement une hauteur d'écran (voir `Section`) ;
-   * en `auto`, il est plus long qu'un écran et l'œuvre vient au milieu.
+   * `screen` cale le bloc sur une hauteur d'écran ; en `auto` il est plus long
+   * et l'œuvre vient au milieu.
    */
   height?: "auto" | "screen";
 }
@@ -46,25 +44,18 @@ interface AboutStatementProps {
  * Bloc éditorial de l'accueil : la ligne du musée en une phrase, puis ce qui la
  * prouve — un détail d'œuvre et trois chiffres.
  *
- * DEUX CHOIX DE MISE EN PAGE, valables dans les deux hauteurs :
+ * Deux choix de mise en page : le texte est décalé à droite face à un titre qui
+ * part de la marge gauche, ce qui distingue le bloc d'une colonne posée à côté
+ * d'une image ; et l'image est une bande assumée, légendée « détail ». Le site
+ * pose partout qu'on ne rogne pas une œuvre — l'exception se tient tant qu'elle
+ * est nommée, comme dans un catalogue d'exposition.
  *
- * 1. LE TEXTE EST DÉCALÉ À DROITE, face à un titre qui part de la marge gauche.
- *    C'est ce décrochage qui distingue le bloc d'une colonne de texte posée à
- *    côté d'une image — la mise en page symétrique qu'il remplace.
- * 2. L'IMAGE EST UNE BANDE, et elle l'assume : elle est légendée « détail ».
- *    Le site pose partout qu'on ne rogne pas une œuvre ; l'exception se tient
- *    tant qu'elle est nommée, comme un détail en pleine page dans un catalogue
- *    d'exposition. L'œuvre entière reste à un clic, sur sa fiche.
+ * `height="screen"` inverse le rapport : en hauteur libre c'est l'image qui
+ * impose sa taille, calé sur l'écran tout le reste est mesuré au plus juste et
+ * l'image prend ce qui reste. D'où le titre en `title` et les chiffres
+ * resserrés, chaque rem repris ailleurs va à l'œuvre.
  *
- * CE QUE CHANGE `height="screen"`, et pourquoi ce n'est pas qu'un réglage : en
- * hauteur libre, le bloc s'étale et c'est l'image qui impose sa taille (un cadre
- * 21/9). Calé sur l'écran, le rapport s'inverse — tout le reste est mesuré au
- * plus juste et l'image prend ce qui reste (`flex-1`). D'où le titre en taille
- * `title` plutôt que `display` et les chiffres resserrés : chaque rem repris
- * ailleurs va à l'œuvre, qui est le sujet du bloc.
- *
- * Server Component : aucun état, aucune interaction. Tout est rendu sur le
- * serveur et n'ajoute rien au JavaScript envoyé au navigateur.
+ * Server Component : aucun état, rien n'est ajouté au JavaScript envoyé.
  */
 export function AboutStatement({
   eyebrow,
@@ -79,9 +70,8 @@ export function AboutStatement({
 }: AboutStatementProps) {
   const isScreen = height === "screen";
 
-  /* `position="center"` et non le `top` habituel : sur une bande aussi large, le
-     haut d'une toile ne donne souvent que du ciel ou du fond. Le centre garde le
-     motif. */
+  /* `center` et non le `top` habituel : sur une bande aussi large, le haut d'une
+     toile ne donne souvent que du ciel. */
   const mediaElement = image ? (
     <Media
       item={{ type: "image", ...image }}
@@ -104,35 +94,26 @@ export function AboutStatement({
           isScreen ? "flex min-h-0 flex-1 flex-col gap-8" : "space-y-24"
         }
       >
-        {/* EN-TÊTE. En hauteur libre, le titre occupe sa propre ligne en grand
-            et le texte vient dessous, décalé à droite : c'est le rythme aéré
-            d'une double page. Calé sur l'écran, les deux passent côte à côte —
-            empilés, ils prendraient à eux seuls la moitié de la hauteur. */}
+        {/* En hauteur libre le titre occupe sa ligne et le texte vient dessous ;
+            calé sur l'écran, les deux passent côte à côte — empilés, ils
+            prendraient la moitié de la hauteur. */}
         <div
           className={
             isScreen
               ? "grid grid-cols-[1.15fr_1fr] items-end gap-20"
-              : /* En hauteur libre les deux colonnes s'empilent, et rien ne les
-                   séparait : le texte venait buter sous la deuxième ligne du
-                   titre. 4rem, et pas moins — à la taille `display`, un titre
-                   sur deux lignes a besoin d'un écart franc pour qu'on voie
-                   qu'il est FINI avant que le paragraphe commence. */
+              : /* 4rem, et pas moins : à la taille `display`, un titre sur deux
+                   lignes a besoin d'un écart franc pour qu'on voie qu'il est
+                   fini avant que le paragraphe commence. */
                 "space-y-16"
           }
         >
           <div className={isScreen ? "space-y-4" : "space-y-6"}>
             {eyebrow && <p className="eyebrow text-ink-mute">{eyebrow}</p>}
 
-            {/* `title` DANS LES DEUX CAS, alors que la hauteur libre montait
-                jusqu'à `display`. C'était le deuxième <h2> de l'accueil à
-                2.75rem près : celui de `Selection`, au-dessus, s'écrit à
-                `title`, et deux blocs éditoriaux de même rang s'affichaient du
+            {/* `title` dans les deux cas : celui de `Selection` juste au-dessus
+                s'écrit à `title`, et deux blocs de même rang s'affichaient du
                 simple au double. Le `display` reste réservé à l'accroche plein
-                écran — un seul par page, sinon il n'accroche plus rien.
-
-                `max-w-[52rem]` tombe avec lui : il bornait la ligne parce qu'à
-                5rem une ligne pleine largeur atteignait 90 signes. À 2.75rem le
-                titre tient de lui-même dans une longueur lisible. */}
+                écran — un seul par page, sinon il n'accroche plus rien. */}
             <Heading as="h2" size="title">
               {title}
             </Heading>
@@ -166,40 +147,31 @@ export function AboutStatement({
         </div>
 
         {image && (
-          /* `flex-1` + `min-h-0` : l'œuvre absorbe toute la hauteur laissée par
-             le reste, au lieu de la fixer avec un ratio qui ne tiendrait pas
-             compte de l'écran. `min-h-0` est ce qui l'autorise à RÉTRÉCIR — un
-             élément flex refuse par défaut de passer sous sa taille naturelle,
-             et le bloc déborderait. */
+          /* `flex-1` + `min-h-0` : l'œuvre absorbe la hauteur laissée par le
+             reste. `min-h-0` est ce qui l'autorise à rétrécir — un élément flex
+             refuse par défaut de passer sous sa taille naturelle. */
           <figure
             className={
               isScreen ? "flex min-h-0 flex-1 flex-col gap-4" : undefined
             }
           >
-            {/* CE DIV N'EST PAS DÉCORATIF, et le retirer refait disparaître
-                l'œuvre. En plein écran, <Media /> passe en mode `fill` : l'image
-                est en position absolue et ne porte aucune hauteur propre, elle
-                dépend entièrement de son cadre. Or la hauteur remontait ici par
-                une chaîne de POURCENTAGES (`h-full` sur `h-full` sur un
-                `flex-1`), et `Section` ne déclare qu'un `min-h-viewport` — une
-                hauteur MINIMALE, donc indéfinie au sens de CSS. Une chaîne de
-                pourcentages appuyée sur une hauteur indéfinie se résout en
-                `auto` : tout s'effondrait à zéro et l'œuvre n'était nulle part.
+            {/* Ce div n'est pas décoratif : le retirer refait disparaître
+                l'œuvre. En plein écran, <Media /> passe en `fill` et ne porte
+                aucune hauteur propre ; la hauteur remontait par une chaîne de
+                pourcentages alors que `Section` ne déclare qu'un
+                `min-h-viewport`, donc une hauteur indéfinie au sens de CSS. La
+                chaîne se résolvait en `auto` et tout s'effondrait à zéro.
 
-                Ce div coupe la chaîne. Lui prend la place restante en `flex-1`
+                Ce div coupe la chaîne : il prend la place restante en `flex-1`
                 — mécanisme flex, pas pourcentage — et sert d'origine à un cadre
-                en `absolute inset-0`, dont la hauteur est alors définie sans
-                ambiguïté. Les `h-full` en dessous ont enfin quelque chose à
-                quoi se rapporter.
+                `absolute inset-0`, dont la hauteur est enfin définie.
 
-                C'est aussi pour cette raison que Hero et Selection n'ont jamais
-                eu le problème : leur image est soit une cellule de grille, soit
-                un élément déjà `absolute`. */}
+                C'est pour ça que Hero et Selection n'ont jamais eu le problème :
+                leur image est une cellule de grille ou déjà `absolute`. */}
             <div className={isScreen ? "relative min-h-0 flex-1" : undefined}>
               <Frame className={isScreen ? "absolute inset-0" : undefined}>
-                {/* La loupe rend le contenu DEUX fois — l'original et la copie
-                    agrandie — d'où l'élément monté dans une variable plutôt que
-                    recopié : une seule description d'image à tenir à jour. */}
+                {/* La loupe rend le contenu deux fois, d'où l'élément monté dans
+                    une variable : une seule description d'image à tenir à jour. */}
                 {lens ? (
                   <GlassLens className={isScreen ? "h-full" : undefined}>
                     {mediaElement}
@@ -226,14 +198,11 @@ export function AboutStatement({
 
         {figures && figures.length > 0 && (
           /* <dl> et non trois <div> : un chiffre et son intitulé forment une
-             paire terme / définition, et c'est ce qui permet à un lecteur
-             d'écran d'annoncer « 39, œuvres au catalogue » au lieu de deux
-             fragments sans lien.
+             paire terme / définition, ce qui permet d'annoncer « 39, œuvres au
+             catalogue » au lieu de deux fragments sans lien.
 
-             `flex-col-reverse` : le <dt> reste avant le <dd> dans le DOM, comme
-             la spécification l'exige, mais le chiffre s'affiche au-dessus de son
-             intitulé. L'ordre visuel et l'ordre sémantique n'ont pas à
-             coïncider. */
+             `flex-col-reverse` : le <dt> reste avant le <dd> dans le DOM comme la
+             spécification l'exige, mais le chiffre s'affiche au-dessus. */
           <dl
             className={cn(
               "grid shrink-0 grid-cols-3 border-line border-t",
@@ -253,11 +222,10 @@ export function AboutStatement({
                 )}
               >
                 <dt className="text-ink-mute text-sm">{figure.label}</dt>
-                {/* UNE SEULE TAILLE, quelle que soit la hauteur du bloc, et
-                    la même que celle de `MuseumFigures` sur la même page : un
-                    chiffre clé n'a qu'un corps sur ce site. Les deux séries
-                    s'affichaient auparavant à 2.75rem ici et 5rem là-bas, pour
-                    un balisage identique au caractère près. */}
+                {/* Une seule taille, la même que `MuseumFigures` sur la même
+                    page : un chiffre clé n'a qu'un corps sur ce site. Les deux
+                    séries s'affichaient à 2.75rem ici et 5rem là-bas pour un
+                    balisage identique. */}
                 <dd className="font-display text-figure">{figure.value}</dd>
               </div>
             ))}

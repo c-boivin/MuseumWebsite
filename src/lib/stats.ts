@@ -8,35 +8,23 @@ export interface CollectionStats {
   /** Mouvements distincts représentés. */
   movementCount: number;
   /**
-   * Période couverte, en chiffres romains : « XVe — XXe ». Chaîne et non paire
-   * de nombres : c'est un libellé d'affichage, et le composer ici évite que
-   * chaque page réinvente le tiret et l'ordre.
-   *
-   * `null` si aucune œuvre du catalogue n'est datée — l'API a des champs qui
-   * peuvent manquer, et un « null — null » sur la page d'accueil serait pire
-   * qu'un chiffre absent.
+   * Période couverte, en chiffres romains : « XVe — XXe ». Une chaîne parce que
+   * c'est un libellé, et la composer ici évite que chaque page réinvente le
+   * tiret. `null` si aucune œuvre n'est datée, plutôt qu'un « null — null ».
    */
   centurySpan: string | null;
 }
 
 /**
- * Les chiffres clés de la collection, DÉRIVÉS du catalogue.
+ * Les chiffres clés de la collection, dérivés du catalogue.
  *
- * Pourquoi ne pas simplement écrire « 39 œuvres, 12 mouvements » dans le
- * contenu : parce que ce sont des affirmations vérifiables, et qu'un chiffre
- * écrit en dur devient faux à la première œuvre ajoutée à l'API sans que
- * personne ne s'en aperçoive. Un musée qui annonce un nombre d'œuvres inexact
- * sur sa page d'accueil, c'est le genre de détail qui décrédibilise tout le
- * reste.
+ * Écrire « 39 œuvres » en dur deviendrait faux à la première œuvre ajoutée sans
+ * que personne s'en aperçoive — un musée qui annonce un nombre inexact sur sa
+ * page d'accueil décrédibilise le reste.
  *
- * Fonction pure, séparée du composant qui l'affiche : elle se relit et se teste
- * sans monter une page, et elle resservira le jour où la page À propos voudra
- * les mêmes chiffres.
- *
- * `artworkCount` vient de `totalCount` et non de `artworks.length` : ce sont
- * deux nombres différents. `artworks` a déjà été filtré des œuvres sans
- * reproduction exploitable (voir `lib/museum.ts`), alors que `totalCount` est le
- * volume réel du catalogue — c'est celui-là qu'un visiteur attend.
+ * `artworkCount` vient de `totalCount` et non de `artworks.length` : ce dernier
+ * a déjà été filtré des œuvres sans reproduction (voir `lib/museum.ts`), alors
+ * que `totalCount` est le volume réel du catalogue.
  */
 export function collectionStats(list: ArtworkList): CollectionStats {
   const movements = new Set<string>();
@@ -68,27 +56,19 @@ export interface MuseumStats {
 }
 
 /**
- * Les chiffres de l'INSTITUTION, par opposition à ceux de la collection
- * ci-dessus.
+ * Les chiffres de l'institution, par opposition à ceux de la collection.
  *
- * Pourquoi les deux séries ne se mélangent pas : `collectionStats` décrit ce
- * qu'on vient voir et se dérive de l'API, `museumStats` décrit la maison qui
- * l'expose et se dérive de `data/site.ts`. Ce sont deux sources, deux rythmes
- * de mise à jour, et l'accueil les montre à deux endroits différents — les
- * chiffres du musée dans l'accroche, ceux du fonds dans le bloc éditorial.
+ * Les deux séries ne se mélangent pas : `collectionStats` décrit ce qu'on vient
+ * voir et se dérive de l'API, `museumStats` décrit la maison et se dérive de
+ * `data/site.ts`. L'accueil les montre à deux endroits différents.
  *
- * MÊME RÈGLE QUE POUR LE CATALOGUE : rien n'est écrit en dur. L'âge du musée
- * se recalcule à chaque régénération de la page, donc il vieillit tout seul ;
- * un « 48 ans » recopié dans un composant serait faux dès le 1er janvier
- * suivant, et c'est exactement le genre de chiffre que personne ne pense à
- * relire.
+ * Rien n'est écrit en dur : l'âge du musée se recalcule à chaque régénération,
+ * donc il vieillit tout seul. Un « 48 ans » recopié serait faux dès le 1er
+ * janvier suivant.
  *
- * LE CUMUL DE VISITEURS EST UNE ESTIMATION — fréquentation annuelle moyenne ×
- * nombre d'années — et non un relevé. Le projet n'a aucune donnée réelle de
- * fréquentation, et inventer une suite de chiffres annuels n'aurait pas rendu
- * l'estimation plus vraie, seulement plus longue à écrire. Il est affiché en
- * notation abrégée (« 8,6 M ») pour ne pas prêter à une précision qu'il n'a
- * pas : un « 8 640 000 » exact serait un mensonge de précision.
+ * Le cumul de visiteurs est une estimation — fréquentation moyenne × années — et
+ * non un relevé. Affiché en notation abrégée (« 8,6 M ») : un « 8 640 000 »
+ * serait un mensonge de précision.
  */
 export function museumStats(now: Date = new Date()): MuseumStats {
   const yearsOpen = Math.max(0, now.getFullYear() - site.openedIn);

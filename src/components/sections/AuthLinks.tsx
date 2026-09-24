@@ -11,26 +11,19 @@ interface AuthLinksProps {
  * Les parcours voisins sous le formulaire : créer un compte, mot de passe
  * oublié, retour à la connexion.
  *
- * ── POURQUOI CE N'EST PAS TROIS `<Link>` ÉCRITS DANS `AuthPanel` ──
- * Parce qu'ils doivent EMPORTER LA QUESTION EN COURS. Un visiteur déconnecté qui
- * clique sur le signet d'une œuvre arrive ici avec deux paramètres dans l'URL :
- * d'où il vient, et quelle œuvre il voulait mettre de côté. S'il n'a pas encore
- * de compte, il clique sur « Créer un compte » — et sans ce composant, les deux
- * paramètres restent sur le paillasson : il s'inscrit, et ressort dans « Ma
- * collection » sans l'œuvre, c'est-à-dire exactement le parcours cassé qu'on
- * vient de réparer pour la connexion.
+ * Pas trois `<Link>` écrits dans `AuthPanel`, parce qu'ils doivent emporter la
+ * question en cours. Un visiteur arrivé ici depuis le signet d'une œuvre a deux
+ * paramètres dans l'URL ; s'il clique sur « Créer un compte » sans ce composant,
+ * ils restent sur le paillasson et il ressort dans « Ma collection » sans
+ * l'œuvre — exactement le parcours cassé qu'on vient de réparer.
  *
- * ── LES ANCRES SE CONSTRUISENT APRÈS LE MONTAGE ──
- * Le serveur ne connaît pas l'URL d'une page pré-générée. Il rend donc les liens
- * nus, et le navigateur leur ajoute la question courante. Le premier rendu du
- * client est identique à celui du serveur — il n'y a pas d'écart d'hydratation,
- * seulement une mise à jour juste après. Et `/connexion` comme `/inscription`
- * restent PRÉ-GÉNÉRÉES, ce que la lecture de `searchParams` côté serveur aurait
- * coûté.
+ * Les ancres se construisent après le montage : le serveur ne connaît pas l'URL
+ * d'une page pré-générée. Le premier rendu client est identique au serveur, donc
+ * aucun écart d'hydratation, et `/connexion` comme `/inscription` restent
+ * pré-générées — ce que la lecture de `searchParams` aurait coûté.
  *
- * Un lien cliqué dans l'intervalle emmène simplement vers la page voisine sans
- * la question : le visiteur retombe sur le comportement d'avant, jamais sur une
- * erreur.
+ * Un lien cliqué dans l'intervalle emmène vers la page voisine sans la question :
+ * le visiteur retombe sur le comportement d'avant, jamais sur une erreur.
  */
 export function AuthLinks({ links }: AuthLinksProps) {
   const [search, setSearch] = useState("");

@@ -13,22 +13,18 @@ export const metadata: Metadata = {
 /**
  * Page Billetterie.
  *
- * MÊME BLOC D'ACCROCHE QUE L'ACCUEIL ET QUE À PROPOS : plein écran, avec une
- * œuvre. La page avait d'abord un en-tête sobre, façon `/collection`, pour que
- * les tarifs soient visibles sans défiler — mais la billetterie était alors la
- * seule page du site à ne pas s'ouvrir sur une toile, et ça se voyait. Un musée
- * qui met une grille de prix en premier écran vend des billets ; un musée qui
- * met une œuvre donne envie d'en acheter un.
+ * Même bloc d'accroche que l'accueil et qu'À propos. La page avait d'abord un
+ * en-tête sobre pour que les tarifs soient visibles sans défiler, mais la
+ * billetterie était alors la seule page à ne pas s'ouvrir sur une toile, et ça
+ * se voyait. Un musée qui met une grille de prix en premier écran vend des
+ * billets ; un musée qui met une œuvre donne envie d'en acheter un.
  *
- * Le prix à payer est assumé et connu : la grille tarifaire commence sous la
- * ligne de flottaison. Le bouton « Choisir ses billets » est là pour ça — il
- * pointe l'ancre `#tarifs` et y emmène en un clic. C'est une ancre et non une
- * navigation : `TransitionLink` laisse passer les URL qui contiennent un `#`
- * sans jouer le panneau de transition, et `scroll-padding-top` (globals.css)
- * cale la cible sous le header collant.
+ * Le prix est assumé : la grille commence sous la ligne de flottaison, et le
+ * bouton « Choisir ses billets » y emmène en un clic. C'est une ancre et non une
+ * navigation — `TransitionLink` ne joue pas le panneau, et
+ * `scroll-padding-top` cale la cible sous le header.
  *
- * Page entièrement statique : aucun appel API, aucune donnée dynamique. Next la
- * pré-rend au build, et seul le panier vit côté client.
+ * Page entièrement statique : aucun appel API, seul le panier vit côté client.
  */
 export default function TicketingPage() {
   return (
@@ -39,12 +35,10 @@ export default function TicketingPage() {
         lead="Choisissez vos entrées et vos options, le total se met à jour au fur et à mesure. Les billets sont valables toute la journée, sans créneau imposé."
         action={{ label: "Choisir ses billets", href: "#tarifs" }}
         image={featuredArtworks.olympia}
-        /* `center`, comme les Tournesols de la page À propos et pour la même
-           raison : le sujet d'Olympia n'est pas en haut de la toile. La figure
-           est allongée en travers du tableau, et le cadrage `top` par défaut ne
-           montrerait que la tenture du fond et le haut du lit. C'est aussi la
-           seule reproduction du site en format paysage : dans un cadre plein
-           écran, elle est recadrée sur les côtés plutôt qu'en hauteur. */
+        /* `center` comme les Tournesols d'À propos : la figure est allongée en
+           travers du tableau, et le cadrage `top` par défaut ne montrerait que
+           la tenture du fond. C'est aussi la seule reproduction du site en
+           format paysage. */
         imagePosition="center"
         height="screen"
       />

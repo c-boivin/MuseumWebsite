@@ -8,79 +8,44 @@ import { addFavorite, isArtworkSlug } from "@/lib/favorites";
 import type { AuthFormState } from "@/types/auth";
 
 /**
- * Soumission des formulaires de compte — connexion, inscription, mot de passe
- * oublié.
+ * Connexion, inscription, mot de passe oublié.
  *
- * TOUT SE PASSE SUR LE SERVEUR, par des Server Actions plutôt que par le client
- * `authClient` du navigateur. Trois raisons, dans l'ordre d'importance :
+ * Tout passe par des Server Actions et non par `authClient` : le mot de passe ne
+ * traverse aucun JavaScript de page, et `AuthPanel` comme les trois pages
+ * restent des Server Components. Contrepartie assumée, un aller-retour serveur
+ * sur un formulaire envoyé une fois.
  *
- * 1. Le mot de passe ne traverse aucun JavaScript de page. Le navigateur poste
- *    le formulaire, le serveur le reçoit — c'est le trajet le plus court, et
- *    celui qui reste valable si le JS est coupé ou en erreur.
- * 2. `AuthPanel` et les trois pages restent des Server Components. Seul le
- *    `sections/AuthForm` qui affiche l'erreur est client, et il ne touche pas
- *    aux champs.
- * 3. C'est cohérent avec le reste du site, où aucune donnée n'est allée
- *    chercher son API depuis le navigateur.
- *
- * Contrepartie assumée : un aller-retour serveur là où le client aurait pu
- * répondre plus vite. Sur un formulaire envoyé une fois, c'est indolore.
- *
- * ── CE FICHIER EST CELUI D'AVANT LA PORTE ──
- * Ce qu'on fait UNE FOIS DEDANS — changer son nom, son adresse, son mot de
- * passe, supprimer son compte — est dans `lib/account-actions.ts`. Le partage,
- * c'est-à-dire la traduction des refus de la librairie et la lecture des champs,
- * est dans `lib/auth-forms.ts`.
- *
- * LA SEULE OPÉRATION DE COMPTE QUI N'EST DANS AUCUN DES DEUX est la
- * déconnexion : elle doit passer par le navigateur, sans quoi le cache de
- * `useSession()` continue d'afficher un visiteur connecté. Voir
- * `account/SignOutButton`.
+ * Ce qu'on fait une fois dedans est dans `lib/account-actions.ts`, le partage
+ * dans `lib/auth-forms.ts`. La déconnexion n'est dans aucun des deux : elle doit
+ * passer par le navigateur, sinon le cache de `useSession()` continue d'afficher
+ * un visiteur connecté. Voir `account/SignOutButton`.
  */
 
 /**
  * Où l'on atterrit une fois connecté.
  *
- * L'ESPACE COMPTE, ET NON L'ACCUEIL. Le placeholder précédent renvoyait sur
- * l'accueil, où rien ne changeait d'apparence : on venait de se connecter et le
- * site était exactement celui qu'on avait quitté. La session existait pourtant,
- * son cookie était posé et sa ligne en base — c'était invisible, donc c'était
- * raté.
- *
- * `/compte/collection`, ce sont les œuvres mises de côté. C'est la seule page dont le
- * contenu n'existe QUE parce qu'on s'est connecté : elle prouve la connexion en
- * la montrant, au lieu de l'annoncer par un message.
+ * L'espace compte et non l'accueil, où rien ne changeait d'apparence : la
+ * session existait mais c'était invisible, donc raté. `/compte/collection` est
+ * la seule page dont le contenu n'existe que parce qu'on s'est connecté.
  */
 const AFTER_AUTH = "/compte/collection";
 
 /**
- * Où renvoyer le visiteur, quand il venait de quelque part.
+ * Le signet d'une œuvre emporte son intention dans l'URL (voir
+ * `artwork/FavoriteButton`) : sans ça on ressortait dans « Ma collection », sans
+ * l'œuvre qu'on voulait mettre de côté.
  *
- * ── LE PARCOURS QUE ÇA RÉPARE ──
- * Déconnecté, on clique sur le signet d'une œuvre : le site envoie vers la
- * connexion. Sans ce qui suit, on ressortait dans « Ma collection », qui n'est
- * pas la page qu'on regardait, et SANS l'œuvre qu'on voulait mettre de côté — le
- * clic de départ était purement et simplement perdu. Le signet emporte donc son
- * intention dans l'URL (`layout` : voir `artwork/FavoriteButton`), et elle
- * traverse le formulaire jusqu'ici.
+ * La valeur vient de l'URL, donc elle n'est pas digne de confiance : rediriger
+ * vers une adresse fournie par le visiteur est la faille dite de « redirection
+ * ouverte ». On n'accepte que des chemins internes, et les trois refus ne sont
+ * pas interchangeables :
+ *  - pas de `/` initial : une adresse absolue, donc un autre site ;
+ *  - `//` : un chemin relatif au protocole, que le navigateur lit `https://…` ;
+ *  - `/\` : certains navigateurs normalisent la barre inversée, d'où le cas
+ *    précédent.
  *
- * ── LA VALEUR VIENT DE L'URL, DONC ELLE N'EST PAS DIGNE DE CONFIANCE ──
- * Rediriger vers une adresse fournie par le visiteur, c'est la faille dite de
- * « redirection ouverte » : il suffit d'envoyer à quelqu'un
- * `…/connexion?retour=https://evil.example` pour qu'il se connecte chez nous et
- * atterrisse ailleurs, en confiance, sur une page qui imitera la nôtre. On
- * n'accepte donc QUE des chemins internes.
- *
- * Les trois refus ne sont pas interchangeables :
- *  - ne commence pas par `/` : une adresse absolue, donc un autre site ;
- *  - commence par `//` : un chemin « relatif au protocole », que le navigateur
- *    lit comme `https://…` — c'est la forme qui passe tous les filtres naïfs ;
- *  - commence par `/\` : certains navigateurs normalisent la barre inversée en
- *    barre oblique, ce qui ramène au cas précédent.
- *
- * On refuse enfin de revenir sur une page du parcours de compte : on vient de
- * s'y connecter, y retourner referait boucler le visiteur sur un formulaire dont
- * il n'a plus besoin.
+ * On refuse enfin de revenir sur une page du parcours de compte, qui ferait
+ * boucler le visiteur sur un formulaire dont il n'a plus besoin.
  */
 const AUTH_PATHS = ["/connexion", "/inscription", "/mot-de-passe-oublie"];
 
@@ -97,15 +62,11 @@ function safeReturnPath(formData: FormData): string {
 }
 
 /**
- * Met de côté l'œuvre que le visiteur voulait ajouter avant d'être arrêté par la
- * porte.
+ * Met de côté l'œuvre que le visiteur voulait ajouter avant d'être arrêté.
  *
- * ── ELLE NE FAIT JAMAIS ÉCHOUER LA CONNEXION ──
- * Le `catch` est vide de conséquence, et c'est délibéré : la connexion a réussi,
- * c'est ce que le visiteur a demandé. Lui renvoyer « la demande n'a pas pu
- * aboutir » parce qu'une ligne de favori n'a pas pu s'écrire serait mentir sur
- * ce qui s'est passé — et le laisser croire qu'il n'est pas connecté alors qu'il
- * l'est. L'œuvre manquera, il lui restera un clic à refaire.
+ * Le `catch` est sans conséquence : la connexion a réussi, c'est ce qui a été
+ * demandé. Annoncer un échec parce qu'une ligne de favori n'a pas pu s'écrire
+ * laisserait croire qu'on n'est pas connecté.
  */
 async function applyPendingFavorite(userId: string, formData: FormData) {
   const slug = readTrimmed(formData, "oeuvre");
@@ -131,9 +92,8 @@ export async function signUpAction(
         email: readTrimmed(formData, "email"),
         password: readRaw(formData, "password"),
       },
-      /* Les en-têtes de la requête en cours : Better Auth y lit l'IP et le
-         navigateur pour les inscrire sur la session, et c'est par cette réponse
-         que `nextCookies()` fait poser le cookie. */
+      /* Better Auth y lit l'IP et le navigateur pour la session, et c'est par
+         cette réponse que `nextCookies()` fait poser le cookie. */
       headers: await headers(),
     });
 
@@ -144,13 +104,9 @@ export async function signUpAction(
 
   await applyPendingFavorite(userId, formData);
 
-  /* HORS DU `try`, ET C'EST OBLIGATOIRE. `redirect()` fonctionne en levant une
-     exception que Next intercepte lui-même ; à l'intérieur du bloc, notre
-     `catch` l'attraperait le premier et la redirection deviendrait un message
-     d'erreur — sur une inscription qui a pourtant réussi.
-
-     Better Auth ouvre la session dans la foulée de l'inscription : on arrive
-     connecté, sans repasser par la page de connexion. */
+  /* Hors du `try`, obligatoirement : `redirect()` lève une exception que Next
+     intercepte, notre `catch` l'attraperait le premier et la redirection
+     deviendrait un message d'erreur sur une inscription réussie. */
   redirect(safeReturnPath(formData));
 }
 
@@ -180,16 +136,9 @@ export async function signInAction(
 }
 
 /**
- * Mot de passe oublié — LA SEULE DES TROIS QUI NE FAIT RIEN, et qui le dit.
- *
- * Envoyer un lien de réinitialisation suppose un service d'envoi d'e-mails,
- * qu'on n'a pas et qui n'est pas au périmètre. Restaient trois options : retirer
- * la page, faire semblant, ou l'annoncer. Faire semblant était la pire —
- * afficher « un e-mail vous a été envoyé » met le visiteur à attendre quelque
- * chose qui n'arrivera jamais, et il n'a aucun moyen de le savoir.
- *
- * C'est la même position que le bouton « Payer » de la billetterie : le
- * parcours est dessiné jusqu'au bout, la dernière marche manque et le dit.
+ * La seule des trois qui ne fait rien, et qui le dit : envoyer un lien suppose
+ * un service d'e-mails hors périmètre. Faire semblant aurait été pire, ça met le
+ * visiteur à attendre quelque chose qui n'arrivera jamais.
  */
 export async function requestPasswordResetAction(): Promise<AuthFormState> {
   return {
