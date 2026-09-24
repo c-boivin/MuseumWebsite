@@ -4,6 +4,8 @@ Site d'un musée de peinture, construit avec Next.js sur l'API
 [`api-museum.vercel.app`](https://api-museum.vercel.app) fournie en cours : 39 œuvres
 majeures, de la Renaissance italienne au surréalisme.
 
+**Site en ligne : [museum-website-black.vercel.app](https://museum-website-black.vercel.app)**
+
 Projet individuel noté — M2 DEV, ECV.
 
 ## Stack
