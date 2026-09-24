@@ -47,3 +47,6 @@ next-env.d.ts
 /AGENTS.md
 /.claude/
 /.cursor/
+
+# Notes de travail — gardées en local, hors du dépôt rendu.
+/docs/

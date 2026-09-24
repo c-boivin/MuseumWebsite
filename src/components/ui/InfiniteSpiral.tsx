@@ -368,8 +368,8 @@ function SpiralImage({ item, index, style }: SpiralImageProps) {
   return (
     /* Les visuels de l'API sont DÉJÀ des vignettes servies à la bonne largeur
        par un CDN. Les repasser par l'optimiseur de Next coûterait une requête
-       sortante par image depuis notre serveur pour un gain nul — c'est la
-       décision actée dans CLAUDE.md, ici appliquée sans passer par next/image. */
+       sortante par image depuis notre serveur pour un gain nul. Même raison que
+       le `unoptimized` de `lib/museum.ts`. */
     // biome-ignore lint/performance/noImgElement: vignettes déjà dimensionnées par un CDN — voir juste au-dessus.
     <img
       className="absolute inset-0 block h-full w-full select-none"

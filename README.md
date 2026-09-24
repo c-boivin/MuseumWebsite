@@ -80,8 +80,3 @@ src/
 ├── types/          Types TypeScript partagés
 └── data/           Contenus statiques FR
 ```
-
-## Documentation
-
-Les conventions de code, les décisions de design et les pièges de Next.js 16
-rencontrés sur le projet sont dans [CLAUDE.md](CLAUDE.md).
