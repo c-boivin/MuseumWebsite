@@ -441,6 +441,71 @@
   letter-spacing: 0.2em;
 }
 
+/* Texte riche venu de l'API : la notice d'une œuvre.
+
+   POURQUOI UN UTILITAIRE CSS ET PAS DES CLASSES TAILWIND. Le HTML de la notice
+   est produit par l'API, pas par nous : on reçoit une suite de <p>, <strong> et
+   <em> qu'on injecte d'un bloc avec `dangerouslySetInnerHTML` (après passage par
+   `lib/sanitize.ts`). Aucune de ces balises n'existe dans un fichier .tsx, donc
+   aucune ne peut recevoir de className — c'est le seul endroit du site où le
+   style doit descendre par le sélecteur.
+
+   Le reset de Tailwind aplatit tout : sans ces règles, la notice arrive en un
+   seul pavé, sans interligne entre les paragraphes et sans italique. Ce n'est
+   donc pas de la décoration, c'est ce qui rend le texte lisible.
+
+   Pas de plugin `@tailwindcss/typography` pour ça : il pèse une dépendance et
+   une centaine de règles pour un contenu qui n'utilise que six balises, toutes
+   listées dans la liste blanche de `lib/sanitize.ts`. */
+@utility rich-text {
+  color: var(--color-ink-soft);
+  font-size: var(--text-lead);
+  /* Plus aéré que le 1.55 d'un chapeau : une notice fait trois à cinq
+     paragraphes, elle se lit en continu et non en diagonale. */
+  line-height: 1.7;
+  text-wrap: pretty;
+
+  /* `p + p` et non `margin-bottom` sur tous les <p> : la marge se pose ENTRE
+     deux paragraphes et ne laisse donc rien traîner sous le dernier, qui
+     désaxerait le bloc face à son titre. */
+  & p + p {
+    margin-top: 1.1em;
+  }
+
+  /* La graisse vient du token du site, pas du 700 par défaut du navigateur : la
+     police du corps de texte n'a pas de bold dessiné, et le faux-gras qu'un
+     navigateur fabrique jure avec le reste. Le passage en `--color-ink`
+     fait le travail de mise en avant à sa place. */
+  & strong,
+  & b {
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+
+  & em,
+  & i {
+    font-style: italic;
+  }
+
+  & ul,
+  & ol {
+    margin-top: 1.1em;
+    padding-left: 1.25em;
+    list-style: revert;
+  }
+
+  & li + li {
+    margin-top: 0.35em;
+  }
+
+  & blockquote {
+    margin-top: 1.1em;
+    border-left: 1px solid var(--color-line);
+    padding-left: 1.25em;
+    font-style: italic;
+  }
+}
+
 /* Masque la barre de défilement SANS retirer le défilement lui-même.
 
    Réservé à un cas précis : un conteneur qui doit rester atteignable jusqu'en

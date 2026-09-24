@@ -37,7 +37,8 @@ interface ListParams {
   limit?: number;
   /** Recherche plein texte sur le titre et l'artiste. */
   search?: string;
-  /** Filtre sur le nom exact de l'artiste. */
+  /** Filtre sur l'artiste. Recherche PARTIELLE et insensible à la casse — voir
+   *  `getArtworksByArtist`, malgré ce qu'annonce la doc du cours. */
   artist?: string;
 }
 
@@ -260,6 +261,45 @@ export async function getArtworkPreviews(
   return objects
     .filter((object): object is MuseumObject => object !== null)
     .map((object) => toArtworkPreview(object, THUMBNAIL_WIDTH.card));
+}
+
+/**
+ * Les AUTRES œuvres du même artiste, celle qu'on regarde exclue.
+ *
+ * ── POURQUOI L'API FAIT LE TRAVAIL ──
+ * `?artist=` est le seul filtre qu'elle expose, et c'est exactement celui dont
+ * on a besoin. Une première version chargeait les 39 œuvres puis les comparait
+ * sur place avec un score (artiste, mouvement, siècle, teinte) : c'était la
+ * seule façon de ne jamais laisser une fiche sans suggestion, mais ça inventait
+ * une notion de « proximité » que ni l'API ni le musée ne définissent. Le
+ * critère retenu est celui qu'un visiteur formule tout seul devant une toile —
+ * « qu'est-ce que ce peintre a fait d'autre ? » — et il se lit dans l'URL de la
+ * requête.
+ *
+ * ── CE QUE ÇA COÛTE, ET C'EST ASSUMÉ ──
+ * Six artistes seulement ont plus d'une œuvre au catalogue. **26 fiches sur 39
+ * n'affichent donc aucune suggestion** et se terminent sur la notice. C'est un
+ * arbitrage rendu en connaissance du chiffre : un bloc qui ne dit qu'une chose
+ * vraie plutôt qu'un bloc toujours rempli dont le lien reste à deviner.
+ *
+ * ── ⚠️ `?artist=` EST UNE RECHERCHE PARTIELLE, PAS UNE ÉGALITÉ ──
+ * `?artist=van Gogh` renvoie les trois van Gogh, insensible à la casse
+ * (vérifié sur l'API en ligne — la doc du cours dit « nom exact »). Sans
+ * conséquence ici puisqu'on passe le nom complet lu sur l'œuvre elle-même, mais
+ * à savoir avant de brancher ce paramètre sur une saisie utilisateur : elle
+ * remonterait tous les artistes dont le nom CONTIENT ce qui est tapé.
+ *
+ * `null` en entrée — une œuvre d'artiste inconnu — donne un tableau vide sans
+ * interroger l'API : il n'y a pas d'« autres œuvres du même anonyme ».
+ */
+export async function getArtworksByArtist(
+  artist: string | null,
+  excludeSlug: string,
+): Promise<ArtworkPreview[]> {
+  if (artist === null) return [];
+
+  const { artworks } = await getArtworks({ artist });
+  return artworks.filter((artwork) => artwork.slug !== excludeSlug);
 }
 
 /**

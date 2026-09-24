@@ -147,10 +147,39 @@ export function Cursor() {
   const overPanelRef = useRef(false);
   const refreshTone = useRef<(() => void) | null>(null);
 
+  /**
+   * PENDANT L'INTRO, AUCUN CURSEUR — ni le nôtre, ni celui du système.
+   *
+   * Le preloader n'a rien à pointer : sous le panneau noir il n'y a ni lien ni
+   * bouton, seulement un monogramme qu'on regarde. Un point blanc qui suit la
+   * souris par-dessus ne désigne donc rien ; il ne fait que disputer l'attention
+   * à la seule chose qui soit là pour l'occuper.
+   *
+   * C'est le geste des zones de HIDDEN_ZONES, pas celui des champs de saisie :
+   * on retire notre point SANS lever `cursor: none`, et rien ne revient à la
+   * place. Rendre la flèche du système serait le défaut inverse — le site
+   * s'ouvrirait sur son plan le plus soigné avec le curseur par défaut de l'OS
+   * posé au milieu.
+   *
+   * SON PROPRE POINT DE PASSAGE, séparé de `overPanelRef` : celui-ci couvre
+   * aussi le panneau de transition, où le point doit au contraire RESTER
+   * visible. On vient d'y cliquer un lien, la souris est posée dessus, et le
+   * curseur est le seul élément qui confirme que le clic a été pris pendant que
+   * l'écran est noir. Les deux panneaux se ressemblent, mais l'un demande
+   * d'attendre et l'autre répond à un geste.
+   */
+  const introRef = useRef(true);
+  const refreshVisibility = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     overPanelRef.current = isOverPanel;
     refreshTone.current?.();
   }, [isOverPanel]);
+
+  useEffect(() => {
+    introRef.current = isIntroRunning;
+    refreshVisibility.current?.();
+  }, [isIntroRunning]);
 
   useGSAP(
     () => {
@@ -211,14 +240,22 @@ export function Cursor() {
           let lastX = -1;
           let lastY = -1;
 
-          /** La couche ne s'affiche que si les deux conditions tiennent. */
+          /** La couche ne s'affiche que si les trois conditions tiennent. */
           const sync = () => {
             gsap.to(layer, {
-              autoAlpha: visible && !suppressed ? 1 : 0,
+              autoAlpha: visible && !suppressed && !introRef.current ? 1 : 0,
               duration: 0.2,
               overwrite: "auto",
             });
           };
+
+          /* Recalcul à la demande, comme `refreshTone` et pour la même raison :
+             l'intro se retire toute seule, sans qu'aucun événement de souris ne
+             se produise. Le cas à couvrir est celui du visiteur qui a bougé la
+             souris PENDANT l'intro — `visible` est alors déjà vrai, et sans ce
+             rappel son curseur resterait effacé jusqu'au mouvement suivant. Le
+             fondu de 0,2 s le fait arriver avec la page. */
+          refreshVisibility.current = sync;
 
           /**
            * Fond sombre : un curseur noir y serait invisible.
@@ -336,6 +373,7 @@ export function Cursor() {
                sans aucun curseur. */
             delete document.documentElement.dataset.cursorOn;
             refreshTone.current = null;
+            refreshVisibility.current = null;
             window.removeEventListener("pointermove", onMove);
             window.removeEventListener("pointerover", onOver);
             window.removeEventListener("pointerdown", onDown);

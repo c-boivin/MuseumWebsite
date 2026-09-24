@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: "Collection",
   description:
     "L'ensemble des œuvres exposées : peintures, fresques et estampes, de la Renaissance au surréalisme.",
+  /* La page se visite aussi avec des filtres dans l'URL (`?mouvement=…`), qui
+     n'en changent pas le contenu aux yeux d'un moteur de recherche : la
+     canonique désigne l'adresse nue, pour que les variantes ne se fassent pas
+     concurrence dans l'index. */
+  alternates: { canonical: "/collection" },
 };
 
 /**

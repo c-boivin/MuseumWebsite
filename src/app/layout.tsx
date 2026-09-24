@@ -11,6 +11,7 @@ import { ScrollMemoryReset } from "@/components/motion/ScrollMemoryReset";
 import { SilentArrival } from "@/components/motion/SilentArrival";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { site } from "@/data/site";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 /**
@@ -40,18 +41,45 @@ const display = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  /**
+   * L'URL de référence du site, et la pièce qui manquait au reste.
+   *
+   * Sans elle, Next laisse les URLs relatives telles quelles : l'image de
+   * partage sortait en `/opengraph-image` et les URLs canoniques en
+   * `/collection` — des chemins qu'un réseau social ou un moteur de recherche
+   * ne sait pas résoudre, puisqu'il ne lit pas la page depuis notre domaine.
+   * Avec elle, Next les complète en absolu, ici et dans toutes les pages.
+   * Résolution du domaine et replis : `lib/site-url.ts`.
+   */
+  metadataBase: new URL(siteUrl),
+
   /** Le `%s` du template est remplacé par le titre de chaque page. */
   title: {
     default: `${site.name} — ${site.tagline}`,
     template: `%s — ${site.name}`,
   },
   description: site.description,
+
+  /* PAS DE `alternates.canonical` ICI, et c'est le piège du fichier. Les
+     métadonnées d'un layout sont héritées par toutes les pages qui ne les
+     redéfinissent pas : une canonique posée à la racine ferait déclarer à
+     chaque page du site qu'elle n'est qu'une variante de l'accueil, et les 39
+     fiches disparaîtraient de l'index. Chaque page publique déclare la sienne,
+     une par une. */
+
   openGraph: {
     title: site.name,
     description: site.description,
+    siteName: site.name,
+    url: "/",
     locale: "fr_FR",
     type: "website",
   },
+
+  /* L'aperçu grand format sur X / Twitter. Le titre, la description et l'image
+     sont repris de l'Open Graph ci-dessus par Next : seul le format de carte
+     n'a pas d'équivalent et doit être déclaré. */
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

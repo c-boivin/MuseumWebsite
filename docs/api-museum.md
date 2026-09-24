@@ -16,7 +16,8 @@ Base : `https://api-museum.vercel.app`
 | Champ `slug` | absent de la liste des champs, mentionné seulement en note | bien présent sur chaque œuvre, et unique | `slug` est la clé d'URL et la clé React |
 | `/objects/{id}` | laisse croire qu'un identifiant marche | `GET /objects/1` répond **404** — seul le slug est accepté | les liens sont construits sur le slug, jamais sur l'`id` |
 | Pagination | non mentionnée | `?page=` et `?limit=` fonctionnent | `getArtworks({ page, limit })` |
-| Recherche | non mentionnée | `?search=` (titre + artiste) et `?artist=` fonctionnent | prêts pour l'étape Recherche |
+| Recherche | non mentionnée | `?search=` (titre + artiste) et `?artist=` fonctionnent | `?search=` prêt pour l'étape Recherche ; `?artist=` sert la sortie « Du même artiste » des fiches |
+| `?artist=` | annoncé comme le « nom exact » | recherche **partielle** et insensible à la casse : `?artist=van Gogh` renvoie les 3 van Gogh | sans conséquence tant qu'on lui passe le nom complet lu sur l'œuvre ; à savoir avant de le brancher sur une saisie utilisateur |
 | `?movement=`, `?sort=`, `?q=` | — | **ignorés** : renvoient les 39 œuvres sans filtrer | ne pas s'en servir, le filtre par mouvement devra être fait côté serveur chez nous |
 | `description` | « la description du tableau » | une chaîne **HTML** (`<p>`, `<strong>`, `<i>`) sur les 39 œuvres | nettoyage obligatoire avant affichage (`lib/sanitize.ts`) |
 | Images | — | hébergées sur `upload.wikimedia.org` et `www.moma.org`, dimensions inconnues | `images.remotePatterns` dans `next.config.mjs` + mode `fill` de `<Media />` |

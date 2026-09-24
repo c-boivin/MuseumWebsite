@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArtworkDetail } from "@/components/artwork/ArtworkDetail";
-import { getArtwork, getArtworkSlugs } from "@/lib/museum";
+import { JsonLd } from "@/components/ui/JsonLd";
+import { site } from "@/data/site";
+import { getArtwork, getArtworkSlugs, getArtworksByArtist } from "@/lib/museum";
 import { toPlainText } from "@/lib/sanitize";
+import { artworkJsonLd, breadcrumbJsonLd } from "@/lib/structured-data";
 
 interface ArtworkPageProps {
   /**
@@ -54,6 +57,13 @@ export async function generateMetadata({
   return {
     title: `${artwork.title}${byline}`,
     description,
+    /* LA MÊME FICHE EXISTE SOUS DEUX ADRESSES — ici, et sous
+       `/compte/collection/[slug]` quand on l'atteint depuis sa collection. Deux
+       URLs pour un contenu identique, c'est le cas d'école du contenu dupliqué.
+       L'espace compte est déjà en `noindex` (voir `app/compte/layout.tsx`), donc
+       rien n'est cassé aujourd'hui ; la canonique dit en plus laquelle des deux
+       fait foi, et survivra à un changement de réglage là-bas. */
+    alternates: { canonical: `/collection/${slug}` },
     openGraph: {
       title: artwork.title,
       description,
@@ -86,11 +96,34 @@ export default async function ArtworkPage({ params }: ArtworkPageProps) {
      d'erreur rendu dans une page 200 tromperait les moteurs de recherche. */
   if (!artwork) notFound();
 
+  /* APRÈS le `notFound()`, et pas en parallèle du `getArtwork` au-dessus : on ne
+     connaît le nom du peintre qu'une fois l'œuvre chargée, il n'y a donc rien à
+     demander tant qu'elle n'a pas répondu. L'appel est mis en cache une heure
+     comme tous les autres, et ne se produit qu'au build pour les 39 fiches. */
+  const sameArtist = await getArtworksByArtist(artwork.artist, artwork.slug);
+
   return (
-    <ArtworkDetail
-      artwork={artwork}
-      backHref="/collection"
-      backLabel="Retour à la collection"
-    />
+    <>
+      {/* L'œuvre décrite pour les moteurs de recherche — auteur, date,
+          mouvement, reproduction — et le chemin qui y mène. Ni l'un ni l'autre
+          n'affiche quoi que ce soit. Le fil d'Ariane n'existe QUE dans le
+          balisage : à l'écran, le retour vers le catalogue suffit, mais un
+          résultat de recherche, lui, arrive sans contexte. */}
+      <JsonLd data={artworkJsonLd(artwork)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: site.name, path: "/" },
+          { name: "Collection", path: "/collection" },
+          { name: artwork.title, path: `/collection/${artwork.slug}` },
+        ])}
+      />
+
+      <ArtworkDetail
+        artwork={artwork}
+        backHref="/collection"
+        backLabel="Retour à la collection"
+        sameArtist={sameArtist}
+      />
+    </>
   );
 }

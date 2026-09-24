@@ -28,6 +28,7 @@ const SPIRAL_ARTWORKS = 9;
 export const metadata: Metadata = {
   title: "À propos",
   description: about.metaDescription,
+  alternates: { canonical: "/a-propos" },
 };
 
 /**

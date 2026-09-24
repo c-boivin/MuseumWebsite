@@ -1,11 +1,23 @@
+import type { Metadata } from "next";
 import { AboutStatement } from "@/components/sections/AboutStatement";
 import { Hero } from "@/components/sections/Hero";
 import { MuseumFigures } from "@/components/sections/MuseumFigures";
 import { Selection } from "@/components/sections/Selection";
+import { JsonLd } from "@/components/ui/JsonLd";
 import { featuredArtworks } from "@/data/featured-artworks";
 import { site } from "@/data/site";
 import { getArtworkPreviews, getArtworks } from "@/lib/museum";
 import { collectionStats } from "@/lib/stats";
+import { museumJsonLd } from "@/lib/structured-data";
+
+/**
+ * L'accueil n'a ni titre ni description propres : il prend ceux du root layout,
+ * qui décrivent déjà le musée. Seule la canonique est à déclarer — voir le
+ * commentaire de `app/layout.tsx` sur les canoniques qui ne s'héritent pas.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 /**
  * Les quatre œuvres de la sélection, dans l'ordre du parcours.
@@ -79,6 +91,12 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Le musée décrit pour les moteurs de recherche : adresse, horaires,
+          année d'ouverture. Posé UNIQUEMENT ici — c'est une description du lieu,
+          pas de la page, et la répéter partout n'apprendrait rien de plus.
+          N'affiche rien. Voir `lib/structured-data.ts`. */}
+      <JsonLd data={museumJsonLd()} />
+
       <Hero
         eyebrow="Collection permanente"
         title="Six siècles de peinture, une salle à la fois"

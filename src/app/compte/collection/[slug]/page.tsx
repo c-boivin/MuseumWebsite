@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ArtworkDetail } from "@/components/artwork/ArtworkDetail";
 import { isFavorite } from "@/lib/favorites";
-import { getArtwork } from "@/lib/museum";
+import { getArtwork, getArtworksByArtist } from "@/lib/museum";
 import { requireUser } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -63,11 +63,19 @@ export default async function AccountArtworkPage({ params }: ArtworkPageProps) {
 
   if (!(await isFavorite(user.id, slug))) redirect(`/collection/${slug}`);
 
+  /* Les mêmes suggestions que sur la fiche publique : elles sont cherchées dans
+     le CATALOGUE, pas dans les favoris. Ne proposer que des œuvres déjà mises de
+     côté ferait tourner le visiteur en rond — une suggestion sert justement à
+     sortir de sa propre collection. Leurs liens pointent d'ailleurs vers
+     `/collection`, voir `artwork/ArtworkByArtist`. */
+  const sameArtist = await getArtworksByArtist(artwork.artist, artwork.slug);
+
   return (
     <ArtworkDetail
       artwork={artwork}
       backHref="/compte/collection"
       backLabel="Retour à ma collection"
+      sameArtist={sameArtist}
     />
   );
 }

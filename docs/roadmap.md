@@ -80,7 +80,9 @@ peinture. Voir [api-museum.md](api-museum.md).
 - [x] Stratégie de rendering assumée : SSG au build + ISR à 1 h (`next: { revalidate }`)
 - [x] `error.tsx` + `<Suspense>` avec squelette + gestion des œuvres sans image
 - [x] `/collection` : en-tête + grille alimentée par l'API
-- [x] `/collection/[slug]` : fiche complète (`await params`), cartel, notice, autres vues
+- [x] `/collection/[slug]` : fiche complète (`await params`), cartel — la notice est
+      arrivée à l'étape 4, et les « autres vues » ont été abandonnées : `gallery` ne
+      contient que la reproduction principale, voir CLAUDE.md § Périmètre
 - [x] `generateMetadata` + `generateStaticParams` par œuvre (SEO et SSG, 39 pages)
 - [x] Accueil branché sur l'API (`?limit=6`), placeholders d'œuvres supprimés
 
@@ -95,7 +97,20 @@ s'applique aussi à `[slug]` et force un statut 200 sur les œuvres inexistantes
       (`?siecle=19,20&teinte=bleu`). Les deux critères sont dérivés — l'API ne les fournit
       pas — et le filtrage se fait côté client, les 39 œuvres étant déjà chargées.
       Compteurs par option et cases grisées quand elles ne donneraient aucun résultat.
-- [ ] Œuvres similaires en bas de fiche (même artiste via `?artist=`, ou même mouvement)
+- [x] **Notice et sortie « Du même artiste » en bas de fiche.** La fiche ne tient plus sur
+      un écran : elle en garde un pour la reproduction et son cartel, puis déroule la
+      notice (`artwork/ArtworkNotice`) et, quand il y en a, les autres œuvres du peintre
+      (`artwork/ArtworkByArtist`), servies par le `?artist=` de l'API.
+      **Le détour par un score de proximité a été essayé puis abandonné.** Le plan
+      d'origine de cette ligne — « même artiste, ou même mouvement » — ne couvre pas le
+      catalogue : six artistes seulement ont plus d'une œuvre, et 17 des 24 mouvements
+      n'en désignent qu'une. Une première version additionnait donc quatre critères
+      (artiste, mouvement ou famille de mouvement, siècle, teinte) pour ne jamais laisser
+      une fiche vide. Elle marchait, et elle a été retirée : le titre « Œuvres similaires »
+      n'expliquait pas ce qui reliait les trois toiles proposées à celle qu'on regardait.
+      **Choix arrêté : un critère unique, nommé dans le titre, et un bloc absent sur 26
+      fiches sur 39** plutôt qu'un rapprochement que la page ne sait pas justifier.
+      Le fichier `lib/related.ts` est supprimé.
 - [ ] Pagination si le catalogue grossit (`?page=` et `?limit=` fonctionnent déjà)
 
 **Mesuré plutôt que supposé**, avec un Chrome piloté :
@@ -275,7 +290,23 @@ serverless).
 
 ## Étape 8 — Finition et livrables
 
-- [ ] SEO : `sitemap.ts`, `robots.ts`, Open Graph, données structurées JSON-LD
+- [x] SEO : `sitemap.ts`, `robots.ts`, Open Graph, données structurées JSON-LD
+      - `app/robots.ts` — `/compte/` et `/api/` interdits, et **eux seuls** : les pages
+        de connexion restent explorables, parce qu'un robot qui n'explore pas une page
+        ne lit jamais le `noindex` qu'elle contient. `Disallow` et `noindex` ne
+        s'empilent pas sur une même URL.
+      - `app/sitemap.ts` — 4 pages fixes + les 39 fiches, listées depuis le `slug` de
+        l'API et non depuis un `slugify` du titre (le modèle du cours en propose un ;
+        il ferait du sitemap une seconde source de vérité). Le catalogue est enveloppé
+        d'un `try/catch` : une API en panne ne doit pas faire échouer un build.
+      - `metadataBase` dans le root layout + une canonique **par page** — jamais dans
+        le layout, où elle s'hériterait et ferait pointer les 39 fiches vers l'accueil.
+      - `app/opengraph-image.tsx` — carte de partage 1200×630 fabriquée au build depuis
+        `data/site.ts`. Les fiches œuvres gardent la leur : la reproduction de l'œuvre.
+      - JSON-LD : `Museum` sur l'accueil, `VisualArtwork` + `BreadcrumbList` sur chaque
+        fiche. Construits dans `lib/structured-data.ts`, publiés par `ui/JsonLd`.
+      - ⚠️ Reste à faire au déploiement : poser `NEXT_PUBLIC_SITE_URL` sur Vercel.
+        Sans elle, le repli de `lib/site-url.ts` prend le domaine `.vercel.app`.
 - [ ] Accessibilité : contrastes, focus visible, `alt` sur toutes les images, navigation clavier
 - [ ] Lighthouse : performance, SEO, a11y
 - [ ] Déploiement Vercel + variables d'environnement

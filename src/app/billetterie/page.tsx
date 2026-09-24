@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Billetterie",
   description:
     "Tarifs, options de visite et réservation en ligne du Musée des Mouvements : entrées adulte, jeune, senior, PMR, tarif groupe à partir de 10 personnes.",
+  alternates: { canonical: "/billetterie" },
 };
 
 /**
