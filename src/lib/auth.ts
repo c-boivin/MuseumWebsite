@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { siteUrl } from "@/lib/site-url";
 
 /**
  * Configuration serveur de l'authentification, et seul endroit qui décide de ce
@@ -24,6 +25,31 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
 
   emailAndPassword: { enabled: true },
+
+  /**
+   * Les origines autorisées à appeler `app/api/auth/[...all]` depuis un
+   * navigateur. Better Auth compare l'en-tête `Origin` de toute requête autre
+   * qu'un GET à cette liste et répond 403 sinon : c'est sa protection CSRF,
+   * pas un réglage de confort.
+   *
+   * Par défaut la liste ne contient qu'une entrée, l'origine de
+   * `BETTER_AUTH_URL`. Les formulaires n'en dépendent pas — ils passent par des
+   * Server Actions qui appellent `auth.api.*` en mémoire, sans requête HTTP. La
+   * déconnexion, si : elle part du navigateur. Que la variable posée dans Vercel
+   * ne désigne pas exactement le domaine visité, et le POST `/sign-out` est
+   * refusé. Le GET `/get-session` n'est pas contrôlé, lui, d'où une panne
+   * asymétrique difficile à lire : le header sait encore qui vous êtes, mais ne
+   * sait plus vous faire sortir.
+   *
+   * On ne s'en remet donc plus à cette seule variable. Le domaine du site est
+   * déjà résolu une fois pour toutes dans `lib/site-url.ts`, et `VERCEL_URL`
+   * couvre les déploiements de préversion, dont l'adresse change à chaque
+   * push — `siteUrl` désigne toujours la production et ne les verrait pas.
+   */
+  trustedOrigins: [
+    siteUrl,
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ],
 
   /**
    * Better Auth refuse de changer une adresse ou de supprimer un compte tant

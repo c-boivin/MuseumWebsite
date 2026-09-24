@@ -48,11 +48,16 @@ export function SignOutButton({ className, role }: SignOutButtonProps) {
        déconnecter » réapparaîtrait une fraction de seconde. */
     setIsPending(true);
 
-    try {
-      await authClient.signOut();
-    } catch (error) {
-      /* Réseau coupé, la session reste ouverte : on rend le bouton cliquable
-         plutôt que de faire croire à une déconnexion qui n'a pas eu lieu. */
+    /* Pas de `try/catch` : le client Better Auth est construit sans `throw`,
+       donc `signOut()` ne lève jamais — il renvoie `{ data, error }`. Un
+       `catch` n'attraperait rien, ni un réseau coupé ni un 403, et c'est ce
+       qui a masqué la panne : la déconnexion échouait, on partait quand même
+       sur l'accueil, session ouverte et header inchangé. */
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      /* La session reste ouverte : on rend le bouton cliquable plutôt que de
+         faire croire à une déconnexion qui n'a pas eu lieu. */
       console.error("[auth]", error);
       setIsPending(false);
       return;
